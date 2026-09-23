@@ -1,0 +1,5 @@
+// Circle S1 defined as a Higher Inductive Type (HIT)
+hit S1 {
+    point base;
+    path loop : base = base;
+}

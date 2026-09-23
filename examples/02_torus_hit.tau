@@ -1,0 +1,7 @@
+// Torus T2 defined as a Higher Inductive Type (HIT)
+hit Torus {
+    point b;
+    path p : b = b;
+    path q : b = b;
+    surface face : (p * q) = (q * p);
+}

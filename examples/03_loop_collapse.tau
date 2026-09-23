@@ -1,0 +1,18 @@
+// Homotopy cell diagram and loop-contraction process
+cell0 A;
+cell0 B;
+cell0 C;
+
+cell1 e1 : A -> B;
+cell1 e2 : B -> C;
+cell1 e3 : A -> C;
+
+// Open 1-cycle (initial beta_1 = 1)
+
+process contract_vortices(complex: CellComplex) {
+    rewrite loop_contraction : (e1 * e2) => e3;
+
+    until betti(complex, dim=1) == 0 {
+        apply loop_contraction on complex;
+    }
+}

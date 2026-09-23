@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "${SCRIPT_DIR}"
+export PYTHONPATH="${SCRIPT_DIR}/src:${PYTHONPATH:-}"
+
+echo "=================================================="
+echo "ToposLang (.tau) POC / MVP Test Suite Verification"
+echo "=================================================="
+
+echo ""
+echo "[Step 1/3] Running Core Algebraic Topology & Compiler Tests..."
+python3 -m unittest discover tests
+
+echo ""
+echo "[Step 2/3] Verifying Static Topos Analysis (tauc)..."
+./bin/tauc examples/06_spatial_agents.tau
+
+echo ""
+echo "[Step 3/3] Executing Spatial Multi-Agent Rewrite (tau-run)..."
+./bin/tau-run examples/06_spatial_agents.tau
+
+echo ""
+echo "=================================================="
+echo "✓ All ToposLang MVP Acceptance Gates Passed!"
+echo "=================================================="

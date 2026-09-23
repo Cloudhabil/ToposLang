@@ -1,0 +1,165 @@
+This is pdfTeX, Version 3.141592653-2.6-1.40.26 (TeX Live 2025/dev/Debian) (preloaded format=pdflatex 2026.9.21)  23 SEP 2026 11:23
+entering extended mode
+ restricted \write18 enabled.
+ %&-line parsing enabled.
+**\documentclass{IEEEtran}\begin{document}Testing IEEEtran class\end{document}
+(docs/IEEEtran.cls
+Document Class: IEEEtran 2015/08/26 V1.8b by Michael Shell
+-- See the "IEEEtran_HOWTO" manual for usage information.
+-- http://www.michaelshell.org/tex/ieeetran/
+\@IEEEtrantmpdimenA=\dimen141
+\@IEEEtrantmpdimenB=\dimen142
+\@IEEEtrantmpdimenC=\dimen143
+\@IEEEtrantmpcountA=\count196
+\@IEEEtrantmpcountB=\count197
+\@IEEEtrantmpcountC=\count198
+\@IEEEtrantmptoksA=\toks17
+LaTeX Font Info:    Trying to load font information for OT1+ptm on input line 5
+03.
+(/usr/share/texlive/texmf-dist/tex/latex/psnfss/ot1ptm.fd
+File: ot1ptm.fd 2001/06/04 font definitions for OT1/ptm.
+)
+-- Using 8.5in x 11in (letter) paper.
+-- Using PDF output.
+\@IEEEnormalsizeunitybaselineskip=\dimen144
+-- This is a 10 point document.
+\CLASSINFOnormalsizebaselineskip=\dimen145
+\CLASSINFOnormalsizeunitybaselineskip=\dimen146
+\IEEEnormaljot=\dimen147
+LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <5> not available
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 1090.
+LaTeX Font Info:    Font shape `OT1/ptm/bx/it' in size <5> not available
+(Font)              Font shape `OT1/ptm/b/it' tried instead on input line 1090.
+
+LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <7> not available
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 1090.
+LaTeX Font Info:    Font shape `OT1/ptm/bx/it' in size <7> not available
+(Font)              Font shape `OT1/ptm/b/it' tried instead on input line 1090.
+
+LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <8> not available
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 1090.
+LaTeX Font Info:    Font shape `OT1/ptm/bx/it' in size <8> not available
+(Font)              Font shape `OT1/ptm/b/it' tried instead on input line 1090.
+
+LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <9> not available
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 1090.
+LaTeX Font Info:    Font shape `OT1/ptm/bx/it' in size <9> not available
+(Font)              Font shape `OT1/ptm/b/it' tried instead on input line 1090.
+
+LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <10> not available
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 1090.
+LaTeX Font Info:    Font shape `OT1/ptm/bx/it' in size <10> not available
+(Font)              Font shape `OT1/ptm/b/it' tried instead on input line 1090.
+
+LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <11> not available
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 1090.
+LaTeX Font Info:    Font shape `OT1/ptm/bx/it' in size <11> not available
+(Font)              Font shape `OT1/ptm/b/it' tried instead on input line 1090.
+
+LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <12> not available
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 1090.
+LaTeX Font Info:    Font shape `OT1/ptm/bx/it' in size <12> not available
+(Font)              Font shape `OT1/ptm/b/it' tried instead on input line 1090.
+
+LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <17> not available
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 1090.
+LaTeX Font Info:    Font shape `OT1/ptm/bx/it' in size <17> not available
+(Font)              Font shape `OT1/ptm/b/it' tried instead on input line 1090.
+
+LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <20> not available
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 1090.
+LaTeX Font Info:    Font shape `OT1/ptm/bx/it' in size <20> not available
+(Font)              Font shape `OT1/ptm/b/it' tried instead on input line 1090.
+
+LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <24> not available
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 1090.
+LaTeX Font Info:    Font shape `OT1/ptm/bx/it' in size <24> not available
+(Font)              Font shape `OT1/ptm/b/it' tried instead on input line 1090.
+
+\IEEEquantizedlength=\dimen148
+\IEEEquantizedlengthdiff=\dimen149
+\IEEEquantizedtextheightdiff=\dimen150
+\IEEEilabelindentA=\dimen151
+\IEEEilabelindentB=\dimen152
+\IEEEilabelindent=\dimen153
+\IEEEelabelindent=\dimen154
+\IEEEdlabelindent=\dimen155
+\IEEElabelindent=\dimen156
+\IEEEiednormlabelsep=\dimen157
+\IEEEiedmathlabelsep=\dimen158
+\IEEEiedtopsep=\skip49
+\c@section=\count199
+\c@subsection=\count266
+\c@subsubsection=\count267
+\c@paragraph=\count268
+\c@IEEEsubequation=\count269
+\abovecaptionskip=\skip50
+\belowcaptionskip=\skip51
+\c@figure=\count270
+\c@table=\count271
+\@IEEEeqnnumcols=\count272
+\@IEEEeqncolcnt=\count273
+\@IEEEsubeqnnumrollback=\count274
+\@IEEEquantizeheightA=\dimen159
+\@IEEEquantizeheightB=\dimen160
+\@IEEEquantizeheightC=\dimen161
+\@IEEEquantizeprevdepth=\dimen162
+\@IEEEquantizemultiple=\count275
+\@IEEEquantizeboxA=\box52
+\@IEEEtmpitemindent=\dimen163
+\IEEEPARstartletwidth=\dimen164
+\c@IEEEbiography=\count276
+\@IEEEtranrubishbin=\box53
+) (/usr/share/texlive/texmf-dist/tex/latex/l3backend/l3backend-pdftex.def
+File: l3backend-pdftex.def 2024-05-08 L3 backend support: PDF output (pdfTeX)
+\l__color_backend_stack_int=\count277
+\l__pdf_internal_box=\box54
+)
+No file texput.aux.
+\openout1 = `texput.aux'.
+
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 0.
+LaTeX Font Info:    ... okay on input line 0.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 0.
+LaTeX Font Info:    ... okay on input line 0.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 0.
+LaTeX Font Info:    ... okay on input line 0.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 0.
+LaTeX Font Info:    ... okay on input line 0.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 0.
+LaTeX Font Info:    ... okay on input line 0.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 0.
+LaTeX Font Info:    ... okay on input line 0.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 0.
+LaTeX Font Info:    ... okay on input line 0.
+-- Lines per column: 58 (exact).
+
+
+
+
+[1{/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}{/usr/share/texlive/texmf-
+dist/fonts/enc/dvips/base/8r.enc}
+
+
+] (docs/texput.aux)
+ ***********
+LaTeX2e <2024-11-01> patch level 2
+L3 programming layer <2025-01-18>
+ ***********
+ 
+Here is how much of TeX's memory you used:
+ 1244 strings out of 475178
+ 24888 string characters out of 5766539
+ 408758 words of memory out of 5000000
+ 24318 multiletter control sequences out of 15000+600000
+ 582063 words of font info for 78 fonts, out of 8000000 for 9000
+ 14 hyphenation exceptions out of 8191
+ 35i,6n,50p,266b,153s stack positions out of 10000i,1000n,20000p,200000b,200000s
+</usr/share/texlive/texmf-dist/fonts/type1/urw/times/utmr8a.pfb>
+Output written on docs/texput.pdf (1 page, 10763 bytes).
+PDF statistics:
+ 14 PDF objects out of 1000 (max. 8388607)
+ 8 compressed objects within 1 object stream
+ 0 named destinations out of 1000 (max. 500000)
+ 1 words of extra memory for PDF output out of 10000 (max. 10000000)
+
