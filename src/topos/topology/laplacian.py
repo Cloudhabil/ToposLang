@@ -7,7 +7,7 @@ and verifies the discrete Hodge theorem: dim(ker(L_k)) = beta_k.
 
 from __future__ import annotations
 from fractions import Fraction
-from typing import Optional, Tuple
+from typing import List, Optional, Sequence, Tuple, Union
 
 from topos.core.complex import CellComplex
 from topos.topology.homology import BoundaryMatrix, ExactMatrix
@@ -69,3 +69,24 @@ class HodgeLaplacian:
         if self.n_k == 0:
             return 0
         return self.laplacian.nullity()
+
+    def harmonic_cycles(self) -> List[List[Fraction]]:
+        """Returns exact rational basis vectors spanning ker(L_k).
+        
+        Each vector corresponds to a non-zero harmonic cycle obstruction L_k c = 0.
+        """
+        if self.n_k == 0:
+            return []
+        return self.laplacian.nullspace_basis()
+
+    def is_harmonic_cycle(self, chain_vector: Sequence[Union[Fraction, int]]) -> bool:
+        """Verifies whether a given chain vector c is in ker(L_k), i.e. L_k c = 0."""
+        if len(chain_vector) != self.n_k:
+            return False
+        # Form column vector
+        col_mat = ExactMatrix(self.n_k, 1, [[Fraction(v)] for v in chain_vector])
+        res = self.laplacian.matmul(col_mat)
+        for r in range(res.rows):
+            if res.get(r, 0) != Fraction(0, 1):
+                return False
+        return True

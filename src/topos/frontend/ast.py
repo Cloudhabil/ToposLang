@@ -144,9 +144,10 @@ class RestrictionDecl(ASTNode):
 
 @dataclass
 class SheafDecl(Statement):
-    """sheaf GaugeField over TorusLattice { stalk[2] = R^3; ... }"""
+    """sheaf GaugeField over TorusLattice : PGA(3,0,1) { stalk[2] = R^3; ... }"""
     name: str = ""
     complex_name: str = ""
+    algebra: Optional[str] = None
     stalks: List[StalkDecl] = field(default_factory=list)
     restrictions: List[RestrictionDecl] = field(default_factory=list)
 
@@ -161,6 +162,61 @@ class ProcessDecl(Statement):
 
 
 @dataclass
+class TargetDecl(Statement):
+    """target YangMills_SU3 { gauge_group : SU(3) ; ... }"""
+    name: str = ""
+    properties: Dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
+class AssertNilpotencyStmt(Statement):
+    """assert nilpotency(dim = 1) == true ;"""
+    dim: int = 1
+    expected: bool = True
+
+
+@dataclass
+class ComputeHodgeSpectrumStmt(Statement):
+    """compute_hodge_spectrum( complex , dim = 1 , field = ExactRational ) ;"""
+    complex_name: str = ""
+    dim: int = 1
+    field_type: str = "ExactRational"
+
+
+@dataclass
+class ComputeScreeningGapStmt(Statement):
+    """compute_screening_gap( complex , gauge_group = SU(2) , coupling = 0.8 ) ;"""
+    complex_name: str = ""
+    gauge_group: str = "SU(2)"
+    coupling: float = 0.8
+
+
+@dataclass
+class CellsGradeDecl(ASTNode):
+    """cells 0 : V0, V1 ; or cells 1 : L01 : V0 -> V1 ;"""
+    dim: int = 0
+    raw_entries: List[Any] = field(default_factory=list)
+
+
+@dataclass
+class ComplexBlockDecl(Statement):
+    """complex CellComplex4D { dimension : 4 ; cells 0 : ... ; cells 1 : ... ; sheaf ... }"""
+    name: str = ""
+    dimension: int = 4
+    cell_decls: List[CellsGradeDecl] = field(default_factory=list)
+    sheaf_decl: Optional[SheafDecl] = None
+
+
+@dataclass
+class ProComplexDecl(Statement):
+    """procomplex ProTower over BaseComplex { max_scale : 4 ; }"""
+    name: str = ""
+    base_complex_name: str = ""
+    max_scale: int = 3
+
+
+@dataclass
 class Program(ASTNode):
     """Root program node containing a sequence of statements."""
     statements: List[Statement] = field(default_factory=list)
+

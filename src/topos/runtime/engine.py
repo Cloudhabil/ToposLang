@@ -16,6 +16,9 @@ from topos.runtime.matcher import PathMatcher
 from topos.topology.homology import HomologyEngine
 
 
+VALID_ENGINE_MODES = ("auto", "dacc-only", "cubical-forced")
+
+
 @dataclass(frozen=True)
 class RewriteRule:
     """A directional (n+1)-cell rewrite rule alpha : lhs => rhs."""
@@ -35,9 +38,20 @@ class RewriteTraceStep:
 
 
 class RewriteEngine:
-    """Executes higher-dimensional rewrite transformations on a CellComplex."""
+    """Executes higher-dimensional rewrite transformations on a CellComplex.
 
-    def __init__(self) -> None:
+    Supports three execution engine modes via engine_mode:
+    - 'auto'           (Default): Uses cubical Kan bridge automatically when beta_k != 0.
+    - 'dacc-only':     Forces classical global exact rational matrix patching.
+    - 'cubical-forced': Applies Kan composition on every boundary rewrite regardless of invariants.
+    """
+
+    def __init__(self, engine_mode: str = "auto") -> None:
+        if engine_mode not in VALID_ENGINE_MODES:
+            raise ValueError(
+                f"Unknown engine_mode {engine_mode!r}. Must be one of {VALID_ENGINE_MODES}."
+            )
+        self.engine_mode = engine_mode
         self.rules: Dict[str, RewriteRule] = {}
         self.trace: List[RewriteTraceStep] = []
 
@@ -108,6 +122,47 @@ class RewriteEngine:
             homotopy_cell_name=homotopy_name,
             betti_before=betti_before,
             betti_after=betti_after,
+        )
+        self.trace.append(trace_step)
+        return trace_step
+
+    def apply_cubical_bridge_rule(
+        self,
+        complex_obj: CellComplex,
+        rule_name: str,
+        step_index: int = 0,
+        functor=None,
+    ) -> Optional[RewriteTraceStep]:
+        """Applies a rewrite using the Cubical Homotopy Bridge (Realization Functor R).
+
+        Detects harmonic cycle via L_k, extracts support supp(r), synthesizes Kan open box,
+        executes hcomp with n-truncation, and re-integrates u(1) as a new (k+1)-cell.
+        """
+        # Lazy import to avoid circular dependency
+        from topos.cubical.bridge import RealizationFunctor
+        from topos.core.clifford import PGA301
+
+        if functor is None:
+            functor = RealizationFunctor(signature=PGA301, max_homotopy_dim=2)
+
+        betti_before = HomologyEngine(complex_obj).betti_profile()
+
+        result = functor.resolve_cycle(
+            complex_obj=complex_obj,
+            dim=1,
+            step_index=step_index,
+            rule_name=rule_name,
+        )
+
+        if result is None:
+            return None
+
+        trace_step = RewriteTraceStep(
+            step_index=step_index,
+            rule_name=rule_name,
+            homotopy_cell_name=result.homotopy_cell_name,
+            betti_before=result.betti_before,
+            betti_after=result.betti_after,
         )
         self.trace.append(trace_step)
         return trace_step

@@ -1,0 +1,50 @@
+// ============================================================
+// ToposLang Example 09 — Pro-DACC Continuous Physics & Navier-Stokes
+// ============================================================
+//
+// Demonstrates:
+// 1. Fluid vorticity cycles as non-bounding homological cycles in H_1 and H_2.
+// 2. Projective cascade transition operators π_{m+1 -> m} in lim K_m.
+// 3. Exact rational Hodge Laplacian L_1 over Q preserving circulating flux
+//    and energy invariants identically across infinite scales (zero numerical viscosity).
+// ============================================================
+
+target NavierStokes_ProDACC {
+    gauge_group : SU(2) ;
+    center_group : Z_N(2) ;
+    spacetime_dim : 4 ;
+}
+
+complex FluidVortexCellComplex {
+    dimension : 4 ;
+
+    // Fluid mesh macro-scale cells (scale m=0)
+    cells 0 : N0 , N1 , N2 , N3 , N4 ;
+    cells 1 : V_e01 : N0 -> N1 , V_e12 : N1 -> N2 , V_e23 : N3 -> N2 , V_e30 : N0 -> N3 ;
+    cells 2 : Plaq_vortex : { V_e01 : +1 , V_e12 : +1 , V_e23 : -1 , V_e30 : -1 } ;
+    cells 3 : Vol_eddy ;
+    cells 4 : Hyper_cascade ;
+
+    sheaf VorticitySheaf {
+        stalk_algebra : SU(2) ;
+        center_charge : 1 ;
+    }
+}
+
+process cascade_dissipation_invariant( complex : FluidVortexCellComplex ) {
+    // 1. Static 4-tier boundary nilpotency verifications
+    assert nilpotency(dim = 1) == true ; // B1 * B2 == 0: Exact div(curl) = 0
+    assert nilpotency(dim = 2) == true ; // B2 * B3 == 0: Exact closed circulation
+    assert nilpotency(dim = 3) == true ; // B3 * B4 == 0: Bianchi identity
+
+    // 2. AMR cellular homotopy rewrite (attaches refining homotopy cell)
+    rewrite cascade_step : ( V_e01 + V_e12 ) => ( V_e30 + V_e23 ) ;
+
+    // 3. Multiscale RG cascade until vortex obstruction contracts
+    until betti( complex , dim = 1) == 0 {
+        apply cascade_step on complex ;
+
+        // Evaluate exact rational Hodge spectrum over Q (zero roundoff)
+        compute_hodge_spectrum( complex , dim = 1 , field = ExactRational ) ;
+    }
+}

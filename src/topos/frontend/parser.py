@@ -8,16 +8,22 @@ from topos.core.chain import Chain
 from topos.core.complex import CellComplex
 from topos.frontend.ast import (
     ApplyStmt,
+    AssertNilpotencyStmt,
     BettiCondition,
     Cell0Decl,
     Cell1Decl,
     Cell2Decl,
+    CellsGradeDecl,
+    ComplexBlockDecl,
+    ComputeHodgeSpectrumStmt,
+    ComputeScreeningGapStmt,
     HITConstructor,
     HITDecl,
     PathDecl,
     PathExpr,
     PointDecl,
     ProcessDecl,
+    ProComplexDecl,
     Program,
     RestrictionDecl,
     RewriteDecl,
@@ -26,6 +32,7 @@ from topos.frontend.ast import (
     StalkDecl,
     Statement,
     SurfaceDecl,
+    TargetDecl,
     UntilLoop,
 )
 from topos.frontend.lexer import Lexer, Token, TokenType
@@ -70,6 +77,16 @@ class Parser:
             )
         return self._advance()
 
+    def _expect_ident(self, err_msg: str) -> Token:
+        tok = self._peek()
+        if tok.type in (TokenType.IDENT, TokenType.COMPLEX, TokenType.FIELD):
+            return self._advance()
+        raise ParserError(
+            f"{err_msg}, got {tok.type.name} ({tok.value!r})",
+            tok.line,
+            tok.col,
+        )
+
     def parse(self) -> Program:
         statements: List[Statement] = []
         while self._peek().type != TokenType.EOF:
@@ -86,6 +103,22 @@ class Parser:
             return self._parse_cell1()
         elif tok.type == TokenType.CELL2:
             return self._parse_cell2()
+        elif tok.type == TokenType.CELL:
+            return self._parse_bracketed_cell()
+        elif tok.type == TokenType.CELLS:
+            return self._parse_cells_grade()
+        elif tok.type == TokenType.TARGET:
+            return self._parse_target()
+        elif tok.type == TokenType.COMPLEX:
+            return self._parse_complex_block()
+        elif tok.type == TokenType.PROCOMPLEX:
+            return self._parse_procomplex()
+        elif tok.type == TokenType.ASSERT:
+            return self._parse_assert()
+        elif tok.type == TokenType.COMPUTE_HODGE_SPECTRUM:
+            return self._parse_compute_hodge_spectrum()
+        elif tok.type == TokenType.COMPUTE_SCREENING_GAP:
+            return self._parse_compute_screening_gap()
         elif tok.type == TokenType.HIT:
             return self._parse_hit()
         elif tok.type == TokenType.PROCESS:
@@ -104,6 +137,197 @@ class Parser:
                 tok.line,
                 tok.col,
             )
+
+    def _parse_target(self) -> TargetDecl:
+        tok = self._expect(TokenType.TARGET, "Expected 'target'")
+        name_tok = self._expect(TokenType.IDENT, "Expected target name")
+        self._expect(TokenType.LBRACE, "Expected '{' starting target block")
+        props = {}
+        while self._peek().type != TokenType.RBRACE and self._peek().type != TokenType.EOF:
+            k_tok = self._advance()
+            self._expect(TokenType.COLON, "Expected ':'")
+            v_parts = []
+            while self._peek().type != TokenType.SEMICOLON and self._peek().type != TokenType.EOF:
+                v_parts.append(self._advance().value)
+            self._expect(TokenType.SEMICOLON, "Expected ';' after target property")
+            props[k_tok.value] = "".join(v_parts)
+        self._expect(TokenType.RBRACE, "Expected '}' closing target block")
+        return TargetDecl(line=tok.line, col=tok.col, name=name_tok.value, properties=props)
+
+    def _parse_complex_block(self) -> ComplexBlockDecl:
+        tok = self._expect(TokenType.COMPLEX, "Expected 'complex'")
+        name_tok = self._expect(TokenType.IDENT, "Expected complex name")
+        self._expect(TokenType.LBRACE, "Expected '{' starting complex block")
+        dim = 4
+        cell_decls: List[CellsGradeDecl] = []
+        sheaf_decl: Optional[SheafDecl] = None
+        while self._peek().type != TokenType.RBRACE and self._peek().type != TokenType.EOF:
+            p = self._peek()
+            if p.type == TokenType.IDENT and p.value == "dimension":
+                self._advance()
+                self._expect(TokenType.COLON, "Expected ':' after dimension")
+                d_tok = self._expect(TokenType.NUMBER, "Expected integer dimension")
+                dim = int(d_tok.value)
+                self._expect(TokenType.SEMICOLON, "Expected ';'")
+            elif p.type == TokenType.CELLS:
+                cell_decls.append(self._parse_cells_grade())
+            elif p.type == TokenType.SHEAF:
+                sheaf_decl = self._parse_sheaf()
+            else:
+                self._advance()
+        self._expect(TokenType.RBRACE, "Expected '}' closing complex block")
+        return ComplexBlockDecl(
+            line=tok.line,
+            col=tok.col,
+            name=name_tok.value,
+            dimension=dim,
+            cell_decls=cell_decls,
+            sheaf_decl=sheaf_decl,
+        )
+
+    def _parse_cells_grade(self) -> CellsGradeDecl:
+        tok = self._expect(TokenType.CELLS, "Expected 'cells'")
+        dim_tok = self._expect(TokenType.NUMBER, "Expected cell dimension grade")
+        dim = int(dim_tok.value)
+        self._expect(TokenType.COLON, "Expected ':'")
+        raw_entries = []
+        while self._peek().type != TokenType.SEMICOLON and self._peek().type != TokenType.EOF:
+            raw_entries.append(self._advance().value)
+        self._expect(TokenType.SEMICOLON, "Expected ';'")
+        return CellsGradeDecl(line=tok.line, col=tok.col, dim=dim, raw_entries=raw_entries)
+
+    def _parse_bracketed_cell(self) -> Statement:
+        tok = self._expect(TokenType.CELL, "Expected 'cell'")
+        self._expect(TokenType.LBRACKET, "Expected '['")
+        dim_tok = self._expect(TokenType.NUMBER, "Expected cell dimension")
+        dim = int(dim_tok.value)
+        self._expect(TokenType.RBRACKET, "Expected ']'")
+
+        name_tok = self._expect(TokenType.IDENT, "Expected cell name")
+        names = [name_tok.value]
+        while self._match(TokenType.COMMA):
+            n_tok = self._expect(TokenType.IDENT, "Expected cell name after comma")
+            names.append(n_tok.value)
+
+        if self._match(TokenType.SEMICOLON):
+            if dim == 0:
+                if len(names) == 1:
+                    return Cell0Decl(line=tok.line, col=tok.col, name=names[0])
+                return CellsGradeDecl(line=tok.line, col=tok.col, dim=0, raw_entries=names)
+            return CellsGradeDecl(line=tok.line, col=tok.col, dim=dim, raw_entries=names)
+
+        if self._match(TokenType.EQUALS) or self._match(TokenType.COLON):
+            if dim == 1:
+                src_tok = self._expect(TokenType.IDENT, "Expected source vertex")
+                self._expect(TokenType.ARROW, "Expected '->'")
+                tgt_tok = self._expect(TokenType.IDENT, "Expected target vertex")
+                self._expect(TokenType.SEMICOLON, "Expected ';'")
+                return Cell1Decl(line=tok.line, col=tok.col, name=names[0], source=src_tok.value, target=tgt_tok.value)
+            elif dim == 2:
+                src_expr = self._parse_path_expr()
+                if not (self._match(TokenType.DOUBLE_ARROW) or self._match(TokenType.ARROW)):
+                    raise ParserError("Expected '=>' or '->' in 2-cell boundary", self._peek().line, self._peek().col)
+                tgt_expr = self._parse_path_expr()
+                self._expect(TokenType.SEMICOLON, "Expected ';'")
+                return Cell2Decl(line=tok.line, col=tok.col, name=names[0], source=src_expr, target=tgt_expr)
+
+        self._expect(TokenType.SEMICOLON, "Expected ';'")
+        return CellsGradeDecl(line=tok.line, col=tok.col, dim=dim, raw_entries=names)
+
+    def _parse_assert(self) -> AssertNilpotencyStmt:
+        tok = self._expect(TokenType.ASSERT, "Expected 'assert'")
+        self._expect(TokenType.NILPOTENCY, "Expected 'nilpotency'")
+        self._expect(TokenType.LPAREN, "Expected '('")
+        self._expect(TokenType.DIM, "Expected 'dim'")
+        self._expect(TokenType.EQUALS, "Expected '='")
+        dim_tok = self._expect(TokenType.NUMBER, "Expected dimension number")
+        self._expect(TokenType.RPAREN, "Expected ')'")
+        self._expect(TokenType.EQ, "Expected '=='")
+        expected = True
+        if self._peek().type == TokenType.TRUE:
+            self._advance()
+            expected = True
+        elif self._peek().type == TokenType.FALSE:
+            self._advance()
+            expected = False
+        elif self._peek().type == TokenType.IDENT:
+            val = self._advance().value.lower()
+            expected = (val == "true")
+        self._expect(TokenType.SEMICOLON, "Expected ';'")
+        return AssertNilpotencyStmt(line=tok.line, col=tok.col, dim=int(dim_tok.value), expected=expected)
+
+    def _parse_compute_hodge_spectrum(self) -> ComputeHodgeSpectrumStmt:
+        tok = self._expect(TokenType.COMPUTE_HODGE_SPECTRUM, "Expected 'compute_hodge_spectrum'")
+        self._expect(TokenType.LPAREN, "Expected '('")
+        c_tok = self._expect_ident("Expected complex name")
+        self._expect(TokenType.COMMA, "Expected ','")
+        self._expect(TokenType.DIM, "Expected 'dim'")
+        self._expect(TokenType.EQUALS, "Expected '='")
+        dim_tok = self._expect(TokenType.NUMBER, "Expected dimension number")
+        field_type = "ExactRational"
+        if self._match(TokenType.COMMA):
+            self._expect(TokenType.FIELD, "Expected 'field'")
+            self._expect(TokenType.EQUALS, "Expected '='")
+            f_tok = self._expect_ident("Expected field name")
+            field_type = f_tok.value
+        self._expect(TokenType.RPAREN, "Expected ')'")
+        self._expect(TokenType.SEMICOLON, "Expected ';'")
+        return ComputeHodgeSpectrumStmt(
+            line=tok.line,
+            col=tok.col,
+            complex_name=c_tok.value,
+            dim=int(dim_tok.value),
+            field_type=field_type,
+        )
+
+    def _parse_compute_screening_gap(self) -> ComputeScreeningGapStmt:
+        tok = self._expect(TokenType.COMPUTE_SCREENING_GAP, "Expected 'compute_screening_gap'")
+        self._expect(TokenType.LPAREN, "Expected '('")
+        c_tok = self._expect_ident("Expected complex name")
+        gauge_group = "SU(2)"
+        coupling = 0.8
+        while self._match(TokenType.COMMA):
+            key_tok = self._expect_ident("Expected parameter name")
+            self._expect(TokenType.EQUALS, "Expected '='")
+            if key_tok.value == "gauge_group":
+                val_tok = self._advance()
+                gauge_group = val_tok.value
+                if self._match(TokenType.LPAREN):
+                    num = self._expect(TokenType.NUMBER, "Expected group N")
+                    self._expect(TokenType.RPAREN, "Expected ')'")
+                    gauge_group = f"{gauge_group}({num.value})"
+            elif key_tok.value == "coupling":
+                val_tok = self._advance()
+                coupling = float(val_tok.value)
+            else:
+                self._advance()
+        self._expect(TokenType.RPAREN, "Expected ')'")
+        self._expect(TokenType.SEMICOLON, "Expected ';'")
+        return ComputeScreeningGapStmt(
+            line=tok.line,
+            col=tok.col,
+            complex_name=c_tok.value,
+            gauge_group=gauge_group,
+            coupling=coupling,
+        )
+
+    def _parse_procomplex(self) -> ProComplexDecl:
+        tok = self._expect(TokenType.PROCOMPLEX, "Expected 'procomplex'")
+        name_tok = self._expect(TokenType.IDENT, "Expected procomplex name")
+        base_name = ""
+        if self._match(TokenType.OVER):
+            base_name = self._expect(TokenType.IDENT, "Expected base complex name").value
+        max_scale = 3
+        if self._match(TokenType.LBRACE):
+            while self._peek().type != TokenType.RBRACE and self._peek().type != TokenType.EOF:
+                p = self._advance()
+                if p.value == "max_scale" and self._match(TokenType.COLON):
+                    max_scale = int(self._expect(TokenType.NUMBER, "Expected scale integer").value)
+                    self._match(TokenType.SEMICOLON)
+            self._expect(TokenType.RBRACE, "Expected '}'")
+        elif self._match(TokenType.SEMICOLON):
+            pass
+        return ProComplexDecl(line=tok.line, col=tok.col, name=name_tok.value, base_complex_name=base_name, max_scale=max_scale)
 
     def _parse_cell0(self) -> Cell0Decl:
         tok = self._expect(TokenType.CELL0, "Expected 'cell0'")
@@ -131,20 +355,28 @@ class Parser:
         tok = self._peek()
         elements: List[str] = []
 
-        if self._match(TokenType.LPAREN):
-            # (f * g * h)
+        if self._match(TokenType.LBRACKET):
+            # [e01, e13]
             first_ident = self._expect(TokenType.IDENT, "Expected identifier in path expression")
             elements.append(first_ident.value)
-            while self._match(TokenType.STAR):
-                next_ident = self._expect(TokenType.IDENT, "Expected identifier after '*'")
+            while self._match(TokenType.COMMA) or self._match(TokenType.PLUS) or self._match(TokenType.STAR):
+                next_ident = self._expect(TokenType.IDENT, "Expected identifier after separator")
+                elements.append(next_ident.value)
+            self._expect(TokenType.RBRACKET, "Expected ']' ending bracketed path expression")
+        elif self._match(TokenType.LPAREN):
+            # (f * g * h) or (L01 + L12)
+            first_ident = self._expect(TokenType.IDENT, "Expected identifier in path expression")
+            elements.append(first_ident.value)
+            while self._match(TokenType.STAR) or self._match(TokenType.PLUS) or self._match(TokenType.COMMA):
+                next_ident = self._expect(TokenType.IDENT, "Expected identifier after operator")
                 elements.append(next_ident.value)
             self._expect(TokenType.RPAREN, "Expected ')' ending path expression")
         elif tok.type == TokenType.IDENT:
-            # Single ident or unparenthesized chain f * g
+            # Single ident or unparenthesized chain f * g or L01 + L12
             first_ident = self._advance()
             elements.append(first_ident.value)
-            while self._match(TokenType.STAR):
-                next_ident = self._expect(TokenType.IDENT, "Expected identifier after '*'")
+            while self._match(TokenType.STAR) or self._match(TokenType.PLUS) or self._match(TokenType.COMMA):
+                next_ident = self._expect(TokenType.IDENT, "Expected identifier after operator")
                 elements.append(next_ident.value)
         else:
             raise ParserError("Expected path expression", tok.line, tok.col)
@@ -236,7 +468,8 @@ class Parser:
         name_tok = self._expect(TokenType.IDENT, "Expected rewrite rule name")
         self._expect(TokenType.COLON, "Expected ':' after rewrite rule name")
         lhs = self._parse_path_expr()
-        self._expect(TokenType.DOUBLE_ARROW, "Expected '=>' in rewrite rule")
+        if not (self._match(TokenType.DOUBLE_ARROW) or self._match(TokenType.ARROW)):
+            raise ParserError("Expected '=>' or '->' in rewrite rule", self._peek().line, self._peek().col)
         rhs = self._parse_path_expr()
         self._expect(TokenType.SEMICOLON, "Expected ';' after rewrite rule")
         return RewriteDecl(
@@ -250,13 +483,22 @@ class Parser:
     def _parse_betti_condition(self) -> BettiCondition:
         tok = self._expect(TokenType.BETTI, "Expected 'betti'")
         self._expect(TokenType.LPAREN, "Expected '(' after 'betti'")
-        target = self._expect(TokenType.IDENT, "Expected complex identifier in betti call")
+        target = "complex"
         dim_val = 1
-        if self._match(TokenType.COMMA):
-            if self._match(TokenType.DIM):
-                self._expect(TokenType.EQUALS, "Expected '=' after 'dim'")
-            dim_tok = self._expect(TokenType.NUMBER, "Expected integer dimension")
-            dim_val = int(dim_tok.value)
+        first_tok = self._peek()
+        if first_tok.type == TokenType.NUMBER:
+            dim_val = int(self._advance().value)
+        elif first_tok.type == TokenType.DIM:
+            self._advance()
+            self._expect(TokenType.EQUALS, "Expected '='")
+            dim_val = int(self._expect(TokenType.NUMBER, "Expected integer dimension").value)
+        elif first_tok.type in (TokenType.IDENT, TokenType.COMPLEX):
+            target = self._advance().value
+            if self._match(TokenType.COMMA):
+                if self._match(TokenType.DIM):
+                    self._expect(TokenType.EQUALS, "Expected '=' after 'dim'")
+                dim_tok = self._expect(TokenType.NUMBER, "Expected integer dimension")
+                dim_val = int(dim_tok.value)
         self._expect(TokenType.RPAREN, "Expected ')' closing betti call")
 
         # Comparison operator
@@ -267,7 +509,7 @@ class Parser:
             return BettiCondition(
                 line=tok.line,
                 col=tok.col,
-                target_name=target.value,
+                target_name=target,
                 dim=dim_val,
                 operator=op_tok.value,
                 value=int(val_tok.value),
@@ -345,6 +587,15 @@ class Parser:
         self._expect(TokenType.RBRACKET, "Expected ']' after stalk dimension")
         self._expect(TokenType.EQUALS, "Expected '=' in stalk declaration")
         field_tok = self._expect(TokenType.IDENT, "Expected field type in stalk declaration")
+        field_val = field_tok.value
+        if self._match(TokenType.LPAREN):
+            args = []
+            while self._peek().type != TokenType.RPAREN and self._peek().type != TokenType.EOF:
+                arg_tok = self._advance()
+                args.append(arg_tok.value)
+            self._expect(TokenType.RPAREN, "Expected ')' closing stalk type parameters")
+            field_val = f"{field_val}({''.join(args)})"
+
         vector_dim = 1
         if self._match(TokenType.CARET):
             vdim_tok = self._expect(TokenType.NUMBER, "Expected vector dimension after '^'")
@@ -354,7 +605,7 @@ class Parser:
             line=tok.line,
             col=tok.col,
             cell_dim=int(dim_tok.value),
-            field_type=field_tok.value,
+            field_type=field_val,
             vector_dim=vector_dim,
         )
 
@@ -379,8 +630,24 @@ class Parser:
     def _parse_sheaf(self) -> SheafDecl:
         tok = self._expect(TokenType.SHEAF, "Expected 'sheaf'")
         name_tok = self._expect(TokenType.IDENT, "Expected sheaf name identifier")
-        self._expect(TokenType.OVER, "Expected 'over' after sheaf name")
-        complex_tok = self._expect(TokenType.IDENT, "Expected complex identifier after 'over'")
+        complex_name = ""
+        if self._match(TokenType.OVER):
+            complex_tok = self._expect(TokenType.IDENT, "Expected complex identifier after 'over'")
+            complex_name = complex_tok.value
+
+        algebra: Optional[str] = None
+        if self._match(TokenType.COLON):
+            alg_tok = self._expect(TokenType.IDENT, "Expected algebra identifier after ':'")
+            alg_str = alg_tok.value
+            if self._match(TokenType.LPAREN):
+                args = []
+                while self._peek().type != TokenType.RPAREN and self._peek().type != TokenType.EOF:
+                    arg_tok = self._advance()
+                    args.append(arg_tok.value)
+                self._expect(TokenType.RPAREN, "Expected ')' closing algebra parameters")
+                alg_str = f"{alg_str}({''.join(args)})"
+            algebra = alg_str
+
         self._expect(TokenType.LBRACE, "Expected '{' starting sheaf body")
 
         stalks: List[StalkDecl] = []
@@ -389,22 +656,31 @@ class Parser:
         while self._peek().type != TokenType.RBRACE and self._peek().type != TokenType.EOF:
             c_tok = self._peek()
             if c_tok.type == TokenType.STALK:
-                stalks.append(self._parse_stalk())
+                stk = self._parse_stalk()
+                if algebra and stk.field_type in ("motor", "rotor", "multivector"):
+                    stk.field_type = algebra
+                stalks.append(stk)
             elif c_tok.type == TokenType.RESTRICTION:
                 restrictions.append(self._parse_restriction())
+            elif c_tok.type == TokenType.IDENT:
+                prop_key = self._advance().value
+                if self._match(TokenType.COLON):
+                    val_parts = []
+                    while self._peek().type != TokenType.SEMICOLON and self._peek().type != TokenType.EOF:
+                        val_parts.append(self._advance().value)
+                    self._match(TokenType.SEMICOLON)
+                    if prop_key == "stalk_algebra":
+                        algebra = "".join(val_parts)
             else:
-                raise ParserError(
-                    f"Unexpected token in sheaf body: {c_tok.type.name} ({c_tok.value!r})",
-                    c_tok.line,
-                    c_tok.col,
-                )
+                self._advance()
 
         self._expect(TokenType.RBRACE, "Expected '}' closing sheaf body")
         return SheafDecl(
             line=tok.line,
             col=tok.col,
             name=name_tok.value,
-            complex_name=complex_tok.value,
+            complex_name=complex_name,
+            algebra=algebra,
             stalks=stalks,
             restrictions=restrictions,
         )
@@ -412,26 +688,30 @@ class Parser:
     def _parse_apply(self) -> ApplyStmt:
         tok = self._expect(TokenType.APPLY, "Expected 'apply'")
         rule_tok = self._expect(TokenType.IDENT, "Expected rewrite rule name to apply")
-        self._expect(TokenType.ON, "Expected 'on' after apply rule name")
-        target_tok = self._expect(TokenType.IDENT, "Expected target complex name")
+        target_name = "complex"
+        if self._match(TokenType.ON):
+            target_tok = self._expect_ident("Expected target complex name")
+            target_name = target_tok.value
         self._expect(TokenType.SEMICOLON, "Expected ';' after apply statement")
         return ApplyStmt(
             line=tok.line,
             col=tok.col,
             rule_name=rule_tok.value,
-            target_name=target_tok.value,
+            target_name=target_name,
         )
 
     def _parse_process(self) -> ProcessDecl:
         tok = self._expect(TokenType.PROCESS, "Expected 'process'")
-        name_tok = self._expect(TokenType.IDENT, "Expected process name")
-        self._expect(TokenType.LPAREN, "Expected '(' for process parameters")
-        param_name = self._expect(TokenType.IDENT, "Expected parameter name")
+        name_tok = self._expect_ident("Expected process name")
+        param_name = "complex"
         param_type = "CellComplex"
-        if self._match(TokenType.COLON):
-            type_tok = self._expect(TokenType.IDENT, "Expected parameter type")
-            param_type = type_tok.value
-        self._expect(TokenType.RPAREN, "Expected ')' closing parameter list")
+        if self._match(TokenType.LPAREN):
+            param_tok = self._expect_ident("Expected parameter name")
+            param_name = param_tok.value
+            if self._match(TokenType.COLON):
+                type_tok = self._expect_ident("Expected parameter type")
+                param_type = type_tok.value
+            self._expect(TokenType.RPAREN, "Expected ')' closing parameter list")
         self._expect(TokenType.LBRACE, "Expected '{' starting process body")
 
         body: List[Statement] = []
@@ -445,7 +725,7 @@ class Parser:
             line=tok.line,
             col=tok.col,
             name=name_tok.value,
-            param_name=param_name.value,
+            param_name=param_name,
             param_type=param_type,
             body=body,
         )
@@ -458,10 +738,15 @@ def parse_source(source: str) -> Program:
 
 
 def build_complex(program: Program, name: str = "TauComplex") -> CellComplex:
-    """Lowers AST cell and HIT declarations into a validated CellComplex."""
+    """Lowers AST cell, HIT, complex block, and 4D declarations into a validated CellComplex."""
     complex_obj = CellComplex(name=name)
 
-    # First pass: collect 0-cells
+    # Check for ComplexBlockDecl override
+    complex_blocks = [s for s in program.statements if isinstance(s, ComplexBlockDecl)]
+    if complex_blocks:
+        complex_obj.name = complex_blocks[0].name
+
+    # 1. First pass: Collect 0-cells
     for stmt in program.statements:
         if isinstance(stmt, Cell0Decl):
             complex_obj.add_cell(GlobularCell(stmt.name, dim=0))
@@ -469,8 +754,18 @@ def build_complex(program: Program, name: str = "TauComplex") -> CellComplex:
             for c in stmt.constructors:
                 if isinstance(c, PointDecl):
                     complex_obj.add_cell(GlobularCell(c.name, dim=0))
+        elif isinstance(stmt, CellsGradeDecl) and stmt.dim == 0:
+            for entry in stmt.raw_entries:
+                if entry not in (",", ";", ":") and entry:
+                    complex_obj.add_cell(GlobularCell(entry, dim=0))
+        elif isinstance(stmt, ComplexBlockDecl):
+            for c_decl in stmt.cell_decls:
+                if c_decl.dim == 0:
+                    for entry in c_decl.raw_entries:
+                        if entry not in (",", ";", ":") and entry:
+                            complex_obj.add_cell(GlobularCell(entry, dim=0))
 
-    # Second pass: collect 1-cells
+    # 2. Second pass: Collect 1-cells
     for stmt in program.statements:
         if isinstance(stmt, Cell1Decl):
             src_cell = complex_obj.get_cell(stmt.source, dim=0)
@@ -482,8 +777,28 @@ def build_complex(program: Program, name: str = "TauComplex") -> CellComplex:
                     src_cell = complex_obj.get_cell(c.source, dim=0)
                     tgt_cell = complex_obj.get_cell(c.target, dim=0)
                     complex_obj.add_cell(GlobularCell(c.name, dim=1, source=src_cell, target=tgt_cell))
+        elif isinstance(stmt, ComplexBlockDecl):
+            for c_decl in stmt.cell_decls:
+                if c_decl.dim == 1:
+                    # Entries format: L01 : V0 -> V1 , L12 : V1 -> V2 ...
+                    # Group by comma or colon
+                    tokens = [t for t in c_decl.raw_entries if t != ","]
+                    idx = 0
+                    while idx < len(tokens):
+                        if idx + 4 < len(tokens) and tokens[idx + 1] == ":" and tokens[idx + 3] in ("->", "→"):
+                            l_name = tokens[idx]
+                            s_name = tokens[idx + 2]
+                            t_name = tokens[idx + 4]
+                            s_cell = complex_obj.get_cell(s_name, dim=0)
+                            t_cell = complex_obj.get_cell(t_name, dim=0)
+                            complex_obj.add_cell(GlobularCell(l_name, dim=1, source=s_cell, target=t_cell))
+                            idx += 5
+                        elif idx < len(tokens):
+                            if tokens[idx] not in (":", "->", "→"):
+                                complex_obj.add_cell(GlobularCell(tokens[idx], dim=1, source=Chain.zero(0), target=Chain.zero(0)))
+                            idx += 1
 
-    # Third pass: collect 2-cells
+    # 3. Third pass: Collect 2-cells
     def _path_to_chain(expr: PathExpr) -> Chain:
         chain = Chain.zero(1)
         for elem in expr.elements:
@@ -502,6 +817,49 @@ def build_complex(program: Program, name: str = "TauComplex") -> CellComplex:
                     src_chain = _path_to_chain(c.lhs)
                     tgt_chain = _path_to_chain(c.rhs)
                     complex_obj.add_cell(GlobularCell(c.name, dim=2, source=src_chain, target=tgt_chain))
+        elif isinstance(stmt, ComplexBlockDecl):
+            for c_decl in stmt.cell_decls:
+                if c_decl.dim == 2:
+                    # e.g. P0123 : { L01 : +1 , L12 : +1 , L23 : -1 , L30 : -1 }
+                    tokens = [t for t in c_decl.raw_entries if t not in (",", "{", "}")]
+                    if len(tokens) >= 1:
+                        p_name = tokens[0]
+                        src_chain = Chain.zero(1)
+                        tgt_chain = Chain.zero(1)
+                        i = 1
+                        while i < len(tokens):
+                            if tokens[i] == ":":
+                                i += 1
+                                continue
+                            edge_name = tokens[i]
+                            if i + 2 < len(tokens) and tokens[i + 1] == ":":
+                                sign_str = tokens[i + 2]
+                                try:
+                                    sign_val = int(sign_str)
+                                    edge_cell = complex_obj.get_cell(edge_name, dim=1)
+                                    if sign_val > 0:
+                                        src_chain = src_chain + Chain.from_cell(edge_cell) * sign_val
+                                    elif sign_val < 0:
+                                        tgt_chain = tgt_chain + Chain.from_cell(edge_cell) * (-sign_val)
+                                except Exception:
+                                    pass
+                                i += 3
+                            else:
+                                i += 1
+                        complex_obj.add_cell(GlobularCell(p_name, dim=2, source=src_chain, target=tgt_chain))
+
+    # 4. Fourth pass: Collect 3-cells and 4-cells
+    for stmt in program.statements:
+        if isinstance(stmt, ComplexBlockDecl):
+            for c_decl in stmt.cell_decls:
+                if c_decl.dim == 3:
+                    for raw in c_decl.raw_entries:
+                        if raw not in (",", ";", ":") and raw:
+                            complex_obj.add_cell(GlobularCell(raw, dim=3, source=Chain.zero(2), target=Chain.zero(2)))
+                elif c_decl.dim == 4:
+                    for raw in c_decl.raw_entries:
+                        if raw not in (",", ";", ":") and raw:
+                            complex_obj.add_cell(GlobularCell(raw, dim=4, source=Chain.zero(3), target=Chain.zero(3)))
 
     # Validate nilpotency and boundary attachments
     complex_obj.validate(enforce_nilpotence=True)

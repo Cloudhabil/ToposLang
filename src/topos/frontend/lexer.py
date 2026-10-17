@@ -28,6 +28,18 @@ class TokenType(Enum):
     RESTRICTION = auto()
     SHEAF_DIM_KER = auto()
     SHEAF_BETTI = auto()
+    TARGET = auto()
+    COMPLEX = auto()
+    CELLS = auto()
+    CELL = auto()
+    ASSERT = auto()
+    NILPOTENCY = auto()
+    COMPUTE_HODGE_SPECTRUM = auto()
+    COMPUTE_SCREENING_GAP = auto()
+    PROCOMPLEX = auto()
+    FIELD = auto()
+    TRUE = auto()
+    FALSE = auto()
 
     # Literals
     IDENT = auto()
@@ -38,8 +50,8 @@ class TokenType(Enum):
     SEMICOLON = auto()      # ;
     COMMA = auto()          # ,
     DOT = auto()            # .
-    ARROW = auto()          # ->
-    DOUBLE_ARROW = auto()   # =>
+    ARROW = auto()          # -> or →
+    DOUBLE_ARROW = auto()   # => or ⇒
     EQUALS = auto()         # =
     EQ = auto()             # ==
     NEQ = auto()            # !=
@@ -48,6 +60,8 @@ class TokenType(Enum):
     LTE = auto()            # <=
     GTE = auto()            # >=
     STAR = auto()           # *
+    PLUS = auto()           # +
+    MINUS = auto()          # -
     CARET = auto()          # ^
     LPAREN = auto()         # (
     RPAREN = auto()         # )
@@ -63,6 +77,18 @@ KEYWORDS = {
     "cell0": TokenType.CELL0,
     "cell1": TokenType.CELL1,
     "cell2": TokenType.CELL2,
+    "cell": TokenType.CELL,
+    "cells": TokenType.CELLS,
+    "target": TokenType.TARGET,
+    "complex": TokenType.COMPLEX,
+    "procomplex": TokenType.PROCOMPLEX,
+    "assert": TokenType.ASSERT,
+    "nilpotency": TokenType.NILPOTENCY,
+    "compute_hodge_spectrum": TokenType.COMPUTE_HODGE_SPECTRUM,
+    "compute_screening_gap": TokenType.COMPUTE_SCREENING_GAP,
+    "field": TokenType.FIELD,
+    "true": TokenType.TRUE,
+    "false": TokenType.FALSE,
     "hit": TokenType.HIT,
     "point": TokenType.POINT,
     "path": TokenType.PATH,
@@ -147,7 +173,17 @@ class Lexer:
             start_line = self.line
             start_col = self.col
 
-            # Two-character operators
+            # Unicode and Multi-character operators
+            if ch == "→":
+                self._advance()
+                tokens.append(Token(TokenType.ARROW, "->", start_line, start_col))
+                continue
+
+            if ch == "⇒":
+                self._advance()
+                tokens.append(Token(TokenType.DOUBLE_ARROW, "=>", start_line, start_col))
+                continue
+
             if ch == "-" and self._peek(1) == ">":
                 self._advance()
                 self._advance()
@@ -205,6 +241,22 @@ class Lexer:
                 self._advance()
                 tokens.append(Token(TokenType.STAR, "*", start_line, start_col))
                 continue
+            if ch == "+":
+                if self._peek(1).isdigit():
+                    # Handled below as signed number
+                    pass
+                else:
+                    self._advance()
+                    tokens.append(Token(TokenType.PLUS, "+", start_line, start_col))
+                    continue
+            if ch == "-":
+                if self._peek(1).isdigit():
+                    # Handled below as signed number
+                    pass
+                else:
+                    self._advance()
+                    tokens.append(Token(TokenType.MINUS, "-", start_line, start_col))
+                    continue
             if ch == "<":
                 self._advance()
                 tokens.append(Token(TokenType.LT, "<", start_line, start_col))
@@ -246,10 +298,10 @@ class Lexer:
                 tokens.append(Token(TokenType.DOT, ".", start_line, start_col))
                 continue
 
-            # Numbers (integers, floats, and negative numbers if preceded by minus without arrow)
-            is_negative_num = (ch == "-" and self._peek(1).isdigit())
-            if ch.isdigit() or is_negative_num:
-                num_str = self._advance() if is_negative_num else ""
+            # Numbers (integers, floats, signed + / - numbers)
+            is_signed_num = (ch in ("+", "-") and self._peek(1).isdigit())
+            if ch.isdigit() or is_signed_num:
+                num_str = self._advance() if is_signed_num else ""
                 while self._peek().isdigit():
                     num_str += self._advance()
                 if self._peek() == "." and self._peek(1).isdigit():

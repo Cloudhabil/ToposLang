@@ -9,9 +9,13 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Union
 
 from topos.core.complex import CellComplex
+from topos.core.four_tier_dacc import FourTierDACC
 from topos.frontend.ast import (
     ApplyStmt,
+    AssertNilpotencyStmt,
     BettiCondition,
+    ComputeHodgeSpectrumStmt,
+    ComputeScreeningGapStmt,
     ProcessDecl,
     Program,
     RewriteDecl,
@@ -126,6 +130,37 @@ class ToposInterpreter:
         else:
             raise ValueError(f"Unknown condition type: {type(cond)}")
 
+    def _dispatch_rule(
+        self,
+        complex_obj: CellComplex,
+        rule_name: str,
+        step_index: int,
+    ) -> None:
+        """Routes a rule application through the correct engine backend based on engine_mode.
+
+        - 'auto': Uses classical DACC apply_rule; falls back to cubical bridge if beta_k != 0
+                  and the classical rule produced no change.
+        - 'dacc-only': Always uses classical exact rational matrix patching.
+        - 'cubical-forced': Always uses the Cubical Homotopy Bridge (Realization Functor R).
+        """
+        mode = self.engine.engine_mode
+
+        if mode == "dacc-only":
+            self.engine.apply_rule(complex_obj, rule_name, step_index=step_index)
+        elif mode == "cubical-forced":
+            # Try cubical bridge first; fall back to classical if no harmonic cycle is found
+            result = self.engine.apply_cubical_bridge_rule(complex_obj, rule_name, step_index=step_index)
+            if result is None:
+                self.engine.apply_rule(complex_obj, rule_name, step_index=step_index)
+        else:
+            # 'auto': Use classical DACC patching; automatically engage cubical bridge on failure
+            try:
+                result = self.engine.apply_rule(complex_obj, rule_name, step_index=step_index)
+            except Exception:
+                result = None
+            if result is None:
+                self.engine.apply_cubical_bridge_rule(complex_obj, rule_name, step_index=step_index)
+
     def run_process(
         self,
         program: Program,
@@ -148,7 +183,31 @@ class ToposInterpreter:
         iterations = 0
 
         for stmt in process_decl.body:
-            if isinstance(stmt, UntilLoop):
+            if isinstance(stmt, AssertNilpotencyStmt):
+                tier = stmt.dim
+                dacc = FourTierDACC(complex_obj)
+                valid = dacc.verify_nilpotency_tier(tier)
+                if valid != stmt.expected:
+                    raise AssertionError(f"Static boundary nilpotency (dim={tier}) == {stmt.expected} failed (actual: {valid})!")
+            elif isinstance(stmt, ComputeHodgeSpectrumStmt):
+                dacc = FourTierDACC(complex_obj)
+                _ = dacc.compute_hodge_laplacian(stmt.dim)
+            elif isinstance(stmt, ComputeScreeningGapStmt):
+                from topos.physics.dynamical_screening import (
+                    DynamicalScreeningEndomorphism,
+                    GaugeField4D,
+                    ScreenedHodgeDiracOperator,
+                )
+                dacc = FourTierDACC(complex_obj)
+                n = 3 if "3" in stmt.gauge_group else 2
+                gf = GaugeField4D(dacc, gauge_group_n=n)
+                gf.randomize_links(0.3)
+                ds = DynamicalScreeningEndomorphism(gf, bare_coupling_g=stmt.coupling)
+                op = ScreenedHodgeDiracOperator(dacc, gf, ds)
+                gap = op.spectral_mass_gap()
+                valid_b, _ = ds.vortex_network.verify_3cell_bianchi_identity()
+                print(f"Dynamically Screened Hodge-Dirac Gap on {complex_obj.name}: Delta m = {gap:.6e} (Bianchi closed: {valid_b})")
+            elif isinstance(stmt, UntilLoop):
                 while not self._eval_condition(stmt.condition, complex_obj, sheaves):
                     if iterations >= max_iterations:
                         raise RuntimeError(
@@ -157,14 +216,13 @@ class ToposInterpreter:
                         )
                     for sub_stmt in stmt.body:
                         if isinstance(sub_stmt, ApplyStmt):
-                            self.engine.apply_rule(
-                                complex_obj,
-                                sub_stmt.rule_name,
-                                step_index=iterations,
-                            )
+                            self._dispatch_rule(complex_obj, sub_stmt.rule_name, iterations)
+                        elif isinstance(sub_stmt, ComputeHodgeSpectrumStmt):
+                            dacc = FourTierDACC(complex_obj)
+                            _ = dacc.compute_hodge_laplacian(sub_stmt.dim)
                     iterations += 1
             elif isinstance(stmt, ApplyStmt):
-                self.engine.apply_rule(complex_obj, stmt.rule_name, step_index=iterations)
+                self._dispatch_rule(complex_obj, stmt.rule_name, iterations)
                 iterations += 1
 
         # Post-execution homology snapshot

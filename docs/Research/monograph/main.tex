@@ -1,0 +1,119 @@
+\documentclass[11pt, a4paper]{report}
+
+\usepackage[top=2.5cm, bottom=2.5cm, left=2.5cm, right=2.5cm]{geometry}
+\usepackage{amsmath, amssymb, amsthm, mathtools}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usepackage{tikz-cd}
+\usepackage{hyperref}
+\usepackage{cite}
+\usepackage{microtype}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue!70!black,
+    citecolor=blue!70!black,
+    urlcolor=blue!70!black,
+    pdftitle={Topological and Geometric Native Coding for Higher Dimensional Programming},
+    pdfauthor={Elias Oulad Brahim}
+}
+
+% Code Listing Settings
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.97,0.97,0.97}
+
+\lstdefinestyle{toposstyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen}\itshape,
+    keywordstyle=\color{magenta}\bfseries,
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\small,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=7pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2,
+    frame=single
+}
+\lstset{style=toposstyle}
+
+% Theorem Environments
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[chapter]
+\newtheorem{axiom}{Axiom}[chapter]
+\newtheorem{example}{Example}[chapter]
+
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[chapter]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{proposition}[theorem]{Proposition}
+
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}[chapter]
+
+% Math Macros
+\newcommand{\K}{\mathcal{K}}
+\newcommand{\cl}{\operatorname{cl}}
+\newcommand{\supp}{\operatorname{supp}}
+\newcommand{\rank}{\operatorname{rank}}
+\newcommand{\nullity}{\operatorname{nullity}}
+\newcommand{\kerop}{\operatorname{ker}}
+\newcommand{\im}{\operatorname{im}}
+\newcommand{\betti}{\beta}
+\newcommand{\Cl}{\mathcal{C}\ell}
+\newcommand{\PGA}{\mathbb{R}^{3,0,1}}
+\newcommand{\CGA}{\mathbb{R}^{4,1,0}}
+\newcommand{\STGA}{\mathbb{R}^{1,3,0}}
+\newcommand{\GeoInt}{\operatorname{GeoIntersect}}
+\newcommand{\Interf}{\operatorname{Interference}}
+\newcommand{\tauLang}{$\tau$\textbf{-Lang}}
+\newcommand{\ToposLang}{\textbf{ToposLang}}
+
+\title{\Huge \textbf{Topological and Geometric Native Coding\\for Higher Dimensional Programming}\\[1.5ex]
+\Large \textbf{A Monograph on Cellular Homotopy Compilation, Clifford Runtimes, and Invariant-Driven Concurrency}}
+
+\author{
+    \textbf{Elias Oulad Brahim} \\
+    \textit{Independent Researcher} \\
+    \href{mailto:eouladbrahim@uoc.edu}{\texttt{eouladbrahim@uoc.edu}} $\mid$ \href{mailto:obe@couhabil.com}{\texttt{obe@couhabil.com}}
+}
+
+\date{September 2026}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+For over seven decades, digital computation has been governed by the von Neumann architectural model, which abstracts memory as a flat, one-dimensional address space of unoriented binary words. While this abstraction underpinned the initial microcomputer and internet revolutions, it presents severe structural impediments to high-throughput concurrency, distributed consensus, geometric machine learning, and physical simulation. Shared-memory architectures require artificial synchronization primitives---such as mutual exclusion locks, barriers, and memory fences---which induce cache invalidation cascades, deadlock vulnerability, and Amdahlian scaling walls. Furthermore, iterative algorithms in scientific computation and artificial intelligence terminate through empirical floating-point heuristics rather than provable topological invariant satisfaction.
+
+This monograph presents \ToposLang{} and the paradigm of \textbf{Geometric Native Coding (GNC)}, an end-to-end programming system that structures computational memory as a graded, multi-dimensional \textit{Directed Acyclic Cell Complex} (DACC). Computation is formalized not as register mutation, but as constructive \textit{cellular homotopies} that attach higher-dimensional cells to bridge parallel computational chains, verified under strict \textit{boundary nilpotency} ($\partial^2 = 0$). We generalize cell coefficient fields from scalars ($\mathbb{Q}$) to graded Clifford multivectors ($\mathcal{C}\ell(p,q,r)$), formulating cellular sheaves that synthesize discrete homology with continuous Lie-group geometry. We prove that computational rules possessing disjoint spatial support closures commute identically, guaranteeing intrinsic lock-free parallelism with zero runtime synchronization overhead. Across shared boundaries, continuous multivector wedge products provide a second tier of lock-free arbitration. We formalize the type system, small-step operational semantics, the \texttt{topos} MLIR compiler dialect, exact rational row reduction algorithms, and hardware coprocessor targets. Microbenchmarks and distributed macrobenchmarks demonstrate linear multi-core scaling up to 128 cores with zero lock contention, closed-form singularity-free inverse kinematics, and exact symmetry-preserving geometric deep learning pipelines.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+\include{chapters/ch1_introduction}
+\include{chapters/ch2_related_work}
+\include{chapters/ch3_language_design}
+\include{chapters/ch4_type_system}
+\include{chapters/ch5_implementation}
+\include{chapters/ch6_evaluation}
+\include{chapters/ch7_conclusion}
+
+\bibliographystyle{plain}
+\bibliography{references}
+
+\end{document}

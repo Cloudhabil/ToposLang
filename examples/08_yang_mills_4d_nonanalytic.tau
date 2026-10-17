@@ -1,0 +1,45 @@
+// Module: YangMills4D_NonAnalytic.tau
+// 4D SU(3) Yang-Mills IR Renormalization Group Engine
+
+target YangMills_SU3 {
+    gauge_group : SU(3) ;
+    center_group : Z_N(3) ;
+    spacetime_dim : 4 ;
+}
+
+complex CellComplex4D {
+    dimension : 4 ;
+
+    // Declarations of graded topological cell sets
+    cells 0 : V0 , V1 , V2 , V3 , V4 ;
+    cells 1 : L01 : V0 -> V1 , L12 : V1 -> V2 , L23 : V3 -> V2 , L30 : V0 -> V3 ;
+    cells 2 : P0123 : { L01 : +1 , L12 : +1 , L23 : -1 , L30 : -1 } ;
+    cells 3 : VOL_01234 ;
+    cells 4 : HYPER_012345 ;
+
+    // Continuous Gauge Sheaf Fiber Assignment
+    sheaf GaugeSheaf {
+        stalk_algebra : SU(3) ;
+        center_charge : 1 ; // Fundamental representation N-ality
+    }
+}
+
+process execute_nonanalytic_rg_step( complex : CellComplex4D ) {
+    // Assert 4-tier boundary nilpotency statically before RG execution
+    assert nilpotency(dim = 1) == true ; // B1 * B2 == 0
+    assert nilpotency(dim = 2) == true ; // B2 * B3 == 0
+    assert nilpotency(dim = 3) == true ; // B3 * B4 == 0
+
+    // Define cellular homotopy rewrite:
+    // Attaches 2-cell P_attach to bridge unclosed gauge loops without register corruption
+    rewrite block_spin_step : ( L01 + L12 ) => ( L30 + L23 ) ;
+
+    // Invariant-driven control loop:
+    // Executes RG paces until center-charged 1-cycle obstructions vanish
+    until betti( complex , dim = 1) == 0 {
+        apply block_spin_step on complex ;
+
+        // Evaluate exact rational Hodge Laplacian over Q
+        compute_hodge_spectrum( complex , dim = 1 , field = ExactRational ) ;
+    }
+}

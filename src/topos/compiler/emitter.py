@@ -28,10 +28,12 @@ class MLIREmitter:
     """Emits textual MLIR IR from CellComplexes, CSR operators, and Cellular Sheaves."""
 
     def __init__(self, target: str = "standard") -> None:
-        """Initializes emitter with a target dialect mode ('standard' or 'topos')."""
-        if target not in ("standard", "topos"):
-            raise ValueError(f"Unknown target dialect: {target!r}. Must be 'standard' or 'topos'.")
+        """Initializes emitter with a target dialect mode ('standard', 'topos', 'cubical', 'yang_mills', 'procomplex', or 'lean4')."""
+        valid_targets = ("standard", "topos", "cubical", "yang_mills", "procomplex", "lean4")
+        if target not in valid_targets:
+            raise ValueError(f"Unknown target dialect: {target!r}. Must be one of {valid_targets}.")
         self.target = target
+
 
     def emit_topos_dialect(
         self,
@@ -222,12 +224,192 @@ class MLIREmitter:
         ]
         return lines
 
+    def emit_cubical_dialect(
+        self,
+        complex_obj: CellComplex,
+        sheaf_ir: Optional[CellularSheafIR] = None,
+        algebra: str = "PGA(3,0,1)",
+        max_homotopy_dim: int = 2,
+    ) -> str:
+        """Emits the topos_cubical bridge dialect MLIR representation.
+
+        Introduces three bridge operations:
+        - topos_cubical.bridge_lower: Lowers DACC sparse tensor support to Kan box tube.
+        - topos_cubical.hcomp: Executes stack-allocated Kan composition.
+        - topos_cubical.truncate: Applies n-truncation pruning pass.
+        """
+        dim = complex_obj.dim
+        lines: List[str] = [
+            '// ToposLang Cubical Homotopy Bridge Dialect',
+            '// Target: topos_cubical dialect',
+            f'// Complex: {complex_obj.name} (dimension = {dim})',
+            f'// Clifford Algebra: {algebra}',
+            f'// Max Homotopy Dimension (n-truncation): {max_homotopy_dim}',
+            'module attributes {topos.version = "1.0.0", topos_cubical.version = "1.0.0"} {',
+        ]
+
+        lines.append(f'  func.func @cubical_bridge_{complex_obj.name}() -> !topos.dacc<{dim}> {{')
+        lines.append(f'    // 1. Build and load the DACC macro-spatial complex')
+        lines.append(f'    %K = topos.create_complex "{complex_obj.name}" : !topos.dacc<{dim}>')
+
+        for k in sorted(complex_obj.graded_cells.keys()):
+            for c in complex_obj.get_cells(k):
+                lines.append(
+                    f'    topos.attach_cell %K, dim({k}), name("{c.name}") : !topos.dacc<{dim}>'
+                )
+
+        lines.append(f'    %c0 = arith.constant 0 : i64')
+        lines.append(f'    // 2. Compute Hodge Laplacian and detect harmonic cycle L_k c != 0')
+        lines.append(f'    %L1 = topos.down_laplacian %K, dim(1) -> !topos.csr_matrix<i64>')
+        lines.append(f'    %beta1 = topos.homology_rank %L1 : i64')
+        lines.append(f'    %has_cycle = arith.cmpi ugt, %beta1, %c0 : i64')
+        lines.append(f'    // 3. Extract spatial support supp(r) and lower to Kan box')
+        lines.append(f'    %support_cells = topos.support_closure %K, %L1 : !topos.set<cell>')
+        lines.append(
+            f'    %kan_box = topos_cubical.bridge_lower %K, %L1, %support_cells :'
+        )
+        lines.append(
+            f'        (!topos.dacc<{dim}>, !topos.csr_matrix<i64>, !topos.set<cell>)'
+        )
+        lines.append(
+            f'        -> !topos_cubical.box_tube<dim = {dim + 1}, algebra = "{algebra}">'
+        )
+        lines.append(f'    // 4. Execute stack-allocated Kan composition with n-truncation')
+        lines.append(f'    %i_one = topos_cubical.interval_endpoint_1 : !topos_cubical.interval')
+        lines.append(
+            f'    %endpoint_mv = topos_cubical.hcomp %kan_box, %i_one :'
+        )
+        lines.append(
+            f'        (!topos_cubical.box_tube<dim = {dim + 1}, algebra = "{algebra}">, !topos_cubical.interval)'
+        )
+        lines.append(f'        -> !topos.multivector<{algebra}>')
+        lines.append(f'    %truncated_mv = topos_cubical.truncate %endpoint_mv {{n_dim = {max_homotopy_dim} : i32}} :')
+        lines.append(f'        !topos.multivector<{algebra}> -> !topos.multivector<{algebra}>')
+        lines.append(f'    // 5. Re-integrate terminal state u(1) as ({dim+1})-cell alpha_r attachment')
+        lines.append(f'    %lhs_chain = topos.extract_lhs_chain %L1 : !topos.chain<{dim}, Q>')
+        lines.append(f'    %rhs_chain = topos.extract_rhs_chain %L1 : !topos.chain<{dim}, Q>')
+        lines.append(f'    %K_closed = topos.homotopy_rewrite %K, %lhs_chain, %rhs_chain :')
+        lines.append(f'        !topos.dacc<{dim}>, !topos.chain<{dim}, Q>, !topos.chain<{dim}, Q> -> !topos.dacc<{dim}>')
+        lines.append(f'    return %K_closed : !topos.dacc<{dim}>')
+        lines.append(f'  }}')
+
+        if sheaf_ir is not None:
+            p_stalk = sheaf_ir.get_stalk(2)
+            e_stalk = sheaf_ir.get_stalk(1)
+            d2 = p_stalk.dim
+            d1 = e_stalk.dim
+            lines.append(f'')
+            lines.append(
+                f'  func.func @cubical_sheaf_{sheaf_ir.name}() -> !topos.sheaf<"{complex_obj.name}", {d2}, "{algebra}"> {{'
+            )
+            lines.append(
+                f'    %s0 = topos.create_sheaf "{sheaf_ir.name}", complex("{complex_obj.name}"), '
+                f'stalk_dim(2, {d2}), stalk_dim(1, {d1}), algebra("{algebra}") '
+                f': !topos.sheaf<"{complex_obj.name}", {d2}, "{algebra}">'
+            )
+            lines.append(f'    return %s0 : !topos.sheaf<"{complex_obj.name}", {d2}, "{algebra}">')
+            lines.append(f'  }}')
+
+        lines.append('}')
+        return '\n'.join(lines)
+
+    def emit_yang_mills_mlir(
+        self,
+        complex_obj: CellComplex,
+        gauge_group: str = "SU3",
+    ) -> str:
+        """Emits Topos MLIR Dialect for 4D Yang-Mills Block-Spin Step (Section 2.5 of spec)."""
+        dim = max(4, complex_obj.dim)
+        lines: List[str] = [
+            '// Topos MLIR Dialect: 4D Yang-Mills Block-Spin Step',
+            f'module attributes {{topos.dim = {dim} : i32, topos.gauge_group = "{gauge_group}"}} {{',
+            f'  func.func @execute_rg_pace(%arg0: !topos.complex<{dim}>) -> !topos.complex<{dim}> {{',
+            '    %c1 = arith.constant 1 : i32',
+            '    %c2 = arith.constant 2 : i32',
+            '    // 1. Verify 4-tier boundary nilpotency: B2 * B3 == 0',
+            f'    %nilpotent_23 = topos.verify_nilpotency %arg0, %c2 : (!topos.complex<{dim}>, i32) -> i1',
+            '    cf.assert %nilpotent_23, "Static Boundary Nilpotency (B2*B3=0) Violated!"',
+            '    // 2. Extract sparse incidence matrices over Q',
+            f'    %B1 = topos.get_incidence_matrix %arg0, %c1 : (!topos.complex<{dim}>, i32) -> !topos.sparse_matrix<Q>',
+            f'    %B2 = topos.get_incidence_matrix %arg0, %c2 : (!topos.complex<{dim}>, i32) -> !topos.sparse_matrix<Q>',
+            '    // 3. Compute Exact Rational Hodge 1-Laplacian: L1 = B1^T * B1 + B2 * B2^T',
+            '    %L1 = topos.compute_hodge_laplacian %B1, %B2 : (!topos.sparse_matrix<Q>, !topos.sparse_matrix<Q>) -> !topos.sparse_matrix<Q>',
+            '    // 4. Isolate Harmonic Kernel Dimension (1st Betti Number beta_1)',
+            '    %beta_1 = topos.compute_kernel_dim %L1 : (!topos.sparse_matrix<Q>) -> i64',
+            '    // 5. Execute Cellular Homotopy Rewrite',
+            f'    %lhs_chain = topos.get_chain %arg0, %c1, [0, 1] : (!topos.complex<{dim}>, i32, list<i32>) -> !topos.chain<1, Q>',
+            f'    %rhs_chain = topos.get_chain %arg0, %c1, [2, 3] : (!topos.complex<{dim}>, i32, list<i32>) -> !topos.chain<1, Q>',
+            '',
+            f'    %updated_complex = topos.homotopy_rewrite %arg0, %lhs_chain, %rhs_chain :',
+            f'        (!topos.complex<{dim}>, !topos.chain<1, Q>, !topos.chain<1, Q>) -> !topos.complex<{dim}>',
+            f'    return %updated_complex : !topos.complex<{dim}>',
+            '  }',
+            '}',
+        ]
+        return '\n'.join(lines)
+
+    def emit_procomplex_mlir(
+        self,
+        complex_obj: CellComplex,
+        gauge_group: str = "SU3",
+        max_scale: int = 3,
+    ) -> str:
+        """Emits Coalgebraic Lazy Streams in MLIR (!topos.procomplex)."""
+        dim = max(4, complex_obj.dim)
+        lines: List[str] = [
+            '// Topos MLIR Dialect: Pro-DACC Inverse Limit Lazy Stream',
+            f'module attributes {{topos.dim = {dim} : i32, topos.gauge_group = "{gauge_group}", topos.procomplex.lazy = true}} {{',
+            f'  func.func @stream_eval_scale(%arg0: !topos.procomplex<{dim}>, %scale: index) -> !topos.complex<{dim}> {{',
+            f'    // Coalgebraic on-demand evaluation of scale %scale in projective tower',
+            f'    %K_scale = topos.eval_stream_scale %arg0, %scale : (!topos.procomplex<{dim}>, index) -> !topos.complex<{dim}>',
+            f'    return %K_scale : !topos.complex<{dim}>',
+            '  }',
+            '',
+            f'  func.func @compute_projective_topological_loss(%arg0: !topos.procomplex<{dim}>) -> f64 {{',
+            f'    %max_s = arith.constant {max_scale} : index',
+            '    %target_beta = arith.constant 0 : i64',
+            f'    // Continuous projective loss L_proj over inverse limit tower',
+            f'    %loss = topos.compute_projective_loss %arg0, %max_s, %target_beta : (!topos.procomplex<{dim}>, index, i64) -> f64',
+            '    return %loss : f64',
+            '  }',
+            '',
+            f'  func.func @zero_cost_elementary_collapse_gc(%arg0: !topos.complex<{dim}>) -> !topos.complex<{dim}> {{',
+            f'    // O(1) elementary collapse pruning inactive intermediate homotopy cells',
+            f'    %pruned = topos.elementary_collapse %arg0 : (!topos.complex<{dim}>) -> !topos.complex<{dim}>',
+            f'    return %pruned : !topos.complex<{dim}>',
+            '  }',
+            '}',
+        ]
+        return '\n'.join(lines)
+
     def emit(
         self,
         complex_obj: CellComplex,
         sheaf_ir: Optional[CellularSheafIR] = None,
+        algebra: str = "PGA(3,0,1)",
+        max_homotopy_dim: int = 2,
+        gauge_group: str = "SU3",
+        max_scale: int = 3,
     ) -> str:
         """Emits textual MLIR IR according to the initialized target mode."""
         if self.target == "topos":
             return self.emit_topos_dialect(complex_obj, sheaf_ir=sheaf_ir)
+        if self.target == "cubical":
+            return self.emit_cubical_dialect(
+                complex_obj,
+                sheaf_ir=sheaf_ir,
+                algebra=algebra,
+                max_homotopy_dim=max_homotopy_dim,
+            )
+        if self.target == "yang_mills":
+            return self.emit_yang_mills_mlir(complex_obj, gauge_group=gauge_group)
+        if self.target == "procomplex":
+            return self.emit_procomplex_mlir(complex_obj, gauge_group=gauge_group, max_scale=max_scale)
+        if self.target == "lean4":
+            from topos.compiler.lean4_emitter import Lean4Emitter
+            return Lean4Emitter().emit_yang_mills_proof_scaffold(
+                complex_obj=complex_obj,
+                gauge_group_n=3 if "3" in gauge_group else 2,
+            )
         return self.emit_standard_mlir(complex_obj, sheaf_ir=sheaf_ir)
+

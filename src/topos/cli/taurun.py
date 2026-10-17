@@ -33,6 +33,16 @@ def main(argv: list[str] | None = None) -> int:
         default="auto",
         help="Execution backend (auto: detect native MLIR else CSR, mlir: attempt MLIR, csr: pure-Python)",
     )
+    parser.add_argument(
+        "--engine",
+        choices=["auto", "dacc-only", "cubical-forced"],
+        default="auto",
+        help=(
+            "Engine mode: 'auto' (default) dispatches Kan bridge on detected harmonic cycle, "
+            "'dacc-only' forces classical RREF matrix patching, "
+            "'cubical-forced' applies Kan composition on every rewrite."
+        ),
+    )
 
     args = parser.parse_args(argv)
 
@@ -68,7 +78,10 @@ def main(argv: list[str] | None = None) -> int:
         bridge = MLIRJITBridge(force_fallback=(args.backend == "csr"))
         backend_name = "native_mlir" if (args.backend in ("auto", "mlir") and bridge.is_native_available()) else "pure_python_csr"
 
-        interpreter = ToposInterpreter()
+        # Instantiate engine with the selected tri-state engine_mode
+        from topos.runtime.engine import RewriteEngine
+        engine = RewriteEngine(engine_mode=args.engine)
+        interpreter = ToposInterpreter(engine=engine)
         ctx = interpreter.run_process(
             program=program,
             process_name=process_name,

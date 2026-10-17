@@ -1,0 +1,175 @@
+\begin{thebibliography}{10}
+
+\bibitem{bezanson2017julia}
+Jeff Bezanson, Alan Edelman, Stefan Karpinski, and Viral~B. Shah.
+\newblock Julia: A fresh approach to numerical computing.
+\newblock {\em SIAM Review}, 59(1):65--98, 2017.
+
+\bibitem{brehmer2023geometric}
+Johann Brehmer, Pim de~Haan, Sönke Behrends, and Taco Cohen.
+\newblock Geometric algebra transformer.
+\newblock {\em Advances in Neural Information Processing Systems (NeurIPS)},
+  36:46123--46145, 2023.
+
+\bibitem{breuils2013embedded}
+Stephane Breuils, Laurent Fuchs, and Pierre Courtois.
+\newblock An embedded, fpga-based computer graphics coprocessor with native
+  geometric algebra support.
+\newblock {\em Integration, the VLSI Journal}, 46(4):363--374, 2013.
+
+\bibitem{church1936unsolvable}
+Alonzo Church.
+\newblock An unsolvable problem of elementary number theory.
+\newblock {\em American Journal of Mathematics}, 58(2):345--363, 1936.
+
+\bibitem{clifford1878applications}
+William~Kingdon Clifford.
+\newblock Applications of grassmann's extensive algebra.
+\newblock {\em American Journal of Mathematics}, 1(4):350--358, 1878.
+
+\bibitem{dijkstra1965cooperating}
+Edsger~W. Dijkstra.
+\newblock Cooperating sequential processes.
+\newblock {\em Technological University Eindhoven, The Netherlands}, 1965.
+
+\bibitem{dorst2007geometric}
+Leo Dorst, Daniel Fontijne, and Stephen Mann.
+\newblock {\em Geometric Algebra for Computer Science: An Object-Oriented
+  Approach to Geometry}.
+\newblock Morgan Kaufmann, San Francisco, 2007.
+
+\bibitem{gunn2017guided}
+Charles Gunn.
+\newblock A guided tour to the plane-based geometric algebra pga.
+\newblock {\em Preprint at bivector.net}, pages 1--55, 2017.
+
+\bibitem{herlihy1990linearizability}
+Maurice~P. Herlihy and Jeannette~M. Wing.
+\newblock Linearizability: A correctness condition for concurrent objects.
+\newblock {\em ACM Transactions on Programming Languages and Systems (TOPLAS)},
+  12(3):463--492, 1990.
+
+\bibitem{hestenes1984clifford}
+David Hestenes and Garret Sobczyk.
+\newblock {\em Clifford Algebra to Geometric Calculus: A Unified Language for
+  Mathematics and Physics}.
+\newblock D. Reidel Publishing Company, Dordrecht, 1984.
+
+\bibitem{hewitt1973universal}
+Carl Hewitt, Peter Bishop, and Richard Steiger.
+\newblock A universal modular actor formalism for artificial intelligence.
+\newblock {\em International Joint Conference on Artificial Intelligence
+  (IJCAI)}, pages 235--245, 1973.
+
+\bibitem{hildenbrand2012foundations}
+Dietmar Hildenbrand.
+\newblock {\em Foundations of Geometric Algebra Computing}.
+\newblock Springer, Berlin, Heidelberg, 2012.
+
+\bibitem{hildenbrand2020power}
+Dietmar Hildenbrand.
+\newblock {\em The Power of Geometric Algebra Computing: For Engineering and
+  Quantum Computing}.
+\newblock CRC Press, Boca Raton, 2020.
+
+\bibitem{hoare1978communicating}
+C.~A.~R. Hoare.
+\newblock Communicating sequential processes.
+\newblock {\em Communications of the ACM}, 21(8):666--677, 1978.
+
+\bibitem{kozlov2008combinatorial}
+Dmitry Kozlov.
+\newblock {\em Combinatorial Algebraic Topology}.
+\newblock Springer Science \& Business Media, Berlin, 2008.
+
+\bibitem{lamport1979make}
+Leslie Lamport.
+\newblock How to make a multiprocessor computer that correctly executes
+  multiprocess programs.
+\newblock {\em IEEE Transactions on Computers}, C-28(9):690--691, 1979.
+
+\bibitem{lattner2021mlir}
+Chris Lattner, Mehdi Amini, Uday Bondhugula, Albert Cohen, Andy Davis, Jacques
+  Pienaar, River Riddle, Tatiana Shpeisman, Nicolas Vasilache, and Oleksandr
+  Zinenko.
+\newblock Mlir: Scaling compiler infrastructure for domain specific
+  computation.
+\newblock {\em IEEE/ACM International Symposium on Code Generation and
+  Optimization (CGO)}, pages 2--14, 2021.
+
+\bibitem{leroy2009formal}
+Xavier Leroy.
+\newblock Formal verification of a realistic compiler.
+\newblock {\em Communications of the ACM}, 52(7):107--115, 2009.
+
+\bibitem{lim2020hodge}
+Lek-Heng Lim.
+\newblock Hodge laplacians on graphs.
+\newblock {\em SIAM Review}, 62(3):685--715, 2020.
+
+\bibitem{marlow2009haskell}
+Simon Marlow et~al.
+\newblock Haskell 2010 language report.
+\newblock {\em Available online at
+  https://www.haskell.org/onlinereport/haskell2010/}, 2010.
+
+\bibitem{matsakis2014rust}
+Nicholas~D. Matsakis and Felix~S. Klock.
+\newblock The rust language.
+\newblock {\em ACM SIGAda Ada Letters}, 34(3):103--104, 2014.
+
+\bibitem{pierce2002types}
+Benjamin~C. Pierce.
+\newblock {\em Types and Programming Languages}.
+\newblock MIT Press, Cambridge, MA, 2002.
+
+\bibitem{ragan2013halide}
+Jonathan Ragan-Kelley, Connelly Barnes, Andrew Adams, Sylvain Paris, Fr{\'e}do
+  Durand, and Saman Amarasinghe.
+\newblock Halide: a language and compiler for optimizing parallelism, locality,
+  and recomputation in image processing pipelines.
+\newblock {\em ACM SIGPLAN Notices}, 48(6):519--530, 2013.
+
+\bibitem{rodriguez2022optimized}
+Enrique Rodriguez-Andina, Eduardo Bayro-Corrochano, et~al.
+\newblock An optimized architecture for cga operations and its application to
+  robotics.
+\newblock {\em Electronics}, 11(21):3508, 2022.
+
+\bibitem{hottbook2013}
+{The Univalent Foundations Program}.
+\newblock {\em Homotopy Type Theory: Univalent Foundations of Mathematics}.
+\newblock Institute for Advanced Study, Princeton, 2013.
+
+\bibitem{trindade2024developing}
+Alexandre M.~S. Trindade and Rui A.~S. Costa.
+\newblock Developing ga-ful: A generic wide-purpose library for computing with
+  geometric algebra.
+\newblock {\em Mathematics}, 12(14):2272, 2024.
+
+\bibitem{turing1937computable}
+Alan~M. Turing.
+\newblock On computable numbers, with an application to the
+  entscheidungsproblem.
+\newblock {\em Proceedings of the London Mathematical Society}, 42(2):230--265,
+  1937.
+
+\bibitem{voevodsky2014univalent}
+Vladimir Voevodsky.
+\newblock An experimental library of formalized mathematics based on the
+  univalent foundations.
+\newblock {\em Mathematical Structures in Computer Science}, 25(5):1278--1294,
+  2015.
+
+\bibitem{wieser2022formalizing}
+Eric Wieser.
+\newblock Formalizing clifford algebras and related constructions in the lean
+  theorem prover.
+\newblock {\em Mathematical Structures in Computer Science}, pages 1--32, 2022.
+
+\bibitem{wright1994syntactic}
+Andrew~K. Wright and Matthias Felleisen.
+\newblock A syntactic approach to type soundness.
+\newblock {\em Information and Computation}, 115(1):38--94, 1994.
+
+\end{thebibliography}

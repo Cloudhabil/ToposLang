@@ -1,0 +1,68 @@
+// ============================================================
+// ToposLang Example 07 — Cubical Kan Bridge
+// ============================================================
+//
+// Demonstrates: Realization Functor R driving automatic Kan
+// composition for an open harmonic 1-cycle in a simplicial
+// annulus, using PGA(3,0,1) Clifford algebra stalk geometry.
+//
+// Topology:
+//   A triangulated annulus: the boundary ∂S¹ forms a nontrivial
+//   homology class [σ] ∈ H₁(K, ℤ), so β₁ = 1 at start.
+//
+// Algebra:
+//   Stalk stalks are PGA(3,0,1) multivectors (motors/rotors),
+//   inferred from the sheaf algebra annotation.
+//
+// Engine Mode:
+//   Default: --engine=auto
+//   Harmonic cycle detection fires the Realization Functor R,
+//   which constructs a KanStackFrame open box, executes hcomp,
+//   and re-integrates the terminal motor u(1) as a filling 2-cell.
+//   The annulus is patched to a disk: β₁ drops from 1 → 0.
+//
+// Run:
+//   tau-run examples/07_cubical_kan_bridge.tau
+//   tau-run examples/07_cubical_kan_bridge.tau --engine=dacc-only
+//   tau-run examples/07_cubical_kan_bridge.tau --engine=cubical-forced
+// ============================================================
+
+// ── Geometry (PGA(3,0,1) scoped sheaf) ─────────────────────
+sheaf Physics3D : PGA(3,0,1) {
+    stalk[1] = motor;
+}
+
+// ── Simplicial Annulus ─────────────────────────────────────
+//   0-cells (vertices)
+cell[0] v0, v1, v2, v3, v4, v5;
+
+//   1-cells (edges) — outer ring
+cell[1] e01 = v0 → v1;
+cell[1] e12 = v1 → v2;
+cell[1] e20 = v2 → v0;
+
+//   1-cells (edges) — inner ring (shared orientation gives cycle)
+cell[1] e03 = v0 → v3;
+cell[1] e34 = v3 → v4;
+cell[1] e45 = v4 → v5;
+cell[1] e50 = v5 → v0;
+
+//   1-cells (spokes)
+cell[1] e13 = v1 → v3;
+cell[1] e24 = v2 → v4;
+
+// ── Rewrite Rule ───────────────────────────────────────────
+//   Fills the triangular strip around the outer boundary.
+rewrite fill_outer : [e01, e13] → [e03];
+rewrite fill_inner : [e12, e24] → [e13];
+
+// ── Invariant-Driven Process ───────────────────────────────
+//   Loop until β₁ = 0 (no open harmonic 1-cycles remain).
+//   With --engine=auto or --engine=cubical-forced, the Kan
+//   bridge fires to complete the filling automatically.
+process KanBridgeDemo {
+    until betti(1) == 0 {
+        apply fill_outer;
+        apply fill_inner;
+    }
+}

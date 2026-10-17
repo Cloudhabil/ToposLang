@@ -32,6 +32,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--dot", type=str, metavar="OUT", help="Export cell complex in Graphviz DOT format")
     parser.add_argument("--emit-mlir", action="store_true", help="Emit lowered standard MLIR textual IR")
     parser.add_argument("--emit-topos-ir", action="store_true", help="Emit high-level topos dialect MLIR IR")
+    parser.add_argument("--target", choices=["standard", "topos", "cubical", "yang_mills", "procomplex"], default=None, help="Target MLIR dialect or mode")
 
     args = parser.parse_args(argv)
 
@@ -56,14 +57,12 @@ def main(argv: list[str] | None = None) -> int:
         if sheaf_decls:
             sheaf_ir = CellularSheafIR.from_ast(sheaf_decls[0], complex_obj)
 
-        if args.emit_topos_ir:
-            emitter = MLIREmitter(target="topos")
-            print(emitter.emit_topos_dialect(complex_obj, sheaf_ir=sheaf_ir))
-            return 0
-
-        if args.emit_mlir:
-            emitter = MLIREmitter(target="standard")
-            print(emitter.emit_standard_mlir(complex_obj, sheaf_ir=sheaf_ir))
+        if args.target or args.emit_mlir or args.emit_topos_ir:
+            target_mode = args.target
+            if not target_mode:
+                target_mode = "topos" if args.emit_topos_ir else "standard"
+            emitter = MLIREmitter(target=target_mode)
+            print(emitter.emit(complex_obj, sheaf_ir=sheaf_ir))
             return 0
 
         engine = HomologyEngine(complex_obj)

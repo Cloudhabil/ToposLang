@@ -137,5 +137,24 @@ class TestCompilerLowering(unittest.TestCase):
         self.assertTrue(complex_obj.validate(enforce_nilpotence=True))
 
 
+    def test_parse_sheaf_scoped_algebra(self) -> None:
+        source = """
+        sheaf Physics3D over TorusLattice : PGA(3,0,1) {
+            stalk[1] = motor;
+            stalk[2] = R^3;
+        }
+        """
+        program = parse_source(source)
+        self.assertEqual(len(program.statements), 1)
+        sheaf_stmt = program.statements[0]
+        self.assertEqual(sheaf_stmt.name, "Physics3D")
+        self.assertEqual(sheaf_stmt.complex_name, "TorusLattice")
+        self.assertEqual(sheaf_stmt.algebra, "PGA(3,0,1)")
+        self.assertEqual(len(sheaf_stmt.stalks), 2)
+        # Verify type inference for 'motor'
+        self.assertEqual(sheaf_stmt.stalks[0].field_type, "PGA(3,0,1)")
+        self.assertEqual(sheaf_stmt.stalks[1].field_type, "R")
+
+
 if __name__ == "__main__":
     unittest.main()

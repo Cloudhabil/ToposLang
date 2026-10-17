@@ -73,10 +73,17 @@ class SpatialPartitioner:
 
 
 class SpatialScheduler:
-    """Dispatches mutually disjoint rewrites across worker threads with 0 lock contention."""
+    """Dispatches mutually disjoint rewrites across worker threads with 0 lock contention.
 
-    def __init__(self, max_workers: int = 4) -> None:
+    engine_mode: 'auto' (default), 'dacc-only', or 'cubical-forced'.
+    """
+
+    def __init__(self, max_workers: int = 4, engine_mode: str = "auto") -> None:
+        from topos.runtime.engine import VALID_ENGINE_MODES
+        if engine_mode not in VALID_ENGINE_MODES:
+            raise ValueError(f"Unknown engine_mode {engine_mode!r}. Must be one of {VALID_ENGINE_MODES}.")
         self.max_workers = max_workers
+        self.engine_mode = engine_mode
         self.trace: List[RewriteTraceStep] = []
 
     def _worker_construct_homotopy(

@@ -1,0 +1,53 @@
+// ============================================================
+// ToposLang Example 10 — Distributed Consensus with Infinite Horizons & Dynamic Churn
+// ============================================================
+//
+// Demonstrates:
+// 1. Peer-to-peer network channels modeled as 1-cells in a Pro-DACC projective system.
+// 2. Deadlocks identified as non-bounding 1-cycles in ker(L_1).
+// 3. Consensus verified by topological cycle contraction:
+//    until betti( complex , dim = 1 ) == 0
+//    without heartbeat timeouts or retry storms.
+// ============================================================
+
+target DistributedConsensus_Infinite {
+    gauge_group : U(1) ;
+    center_group : Z_N(1) ;
+    spacetime_dim : 4 ;
+}
+
+complex PeerChurnNetwork {
+    dimension : 4 ;
+
+    // Node cluster with dynamic churn
+    cells 0 : Peer0 , Peer1 , Peer2 , Peer3 , PeerAnchor ;
+    cells 1 : Msg01 : Peer0 -> Peer1 , Msg12 : Peer1 -> Peer2 , Msg23 : Peer3 -> Peer2 , Msg30 : Peer0 -> Peer3 ;
+    cells 2 : QuorumPlaquette : { Msg01 : +1 , Msg12 : +1 , Msg23 : -1 , Msg30 : -1 } ;
+    cells 3 : VolEpoch ;
+    cells 4 : HyperConsensusHorizon ;
+
+    sheaf MessageSheaf {
+        stalk_algebra : U(1) ;
+        center_charge : 0 ;
+    }
+}
+
+process resolve_distributed_deadlocks( complex : PeerChurnNetwork ) {
+    // Assert 4-tier boundary nilpotency for communication complex
+    assert nilpotency(dim = 1) == true ;
+    assert nilpotency(dim = 2) == true ;
+    assert nilpotency(dim = 3) == true ;
+
+    // Cellular homotopy rewrite: contract deadlock dependency cycle
+    rewrite contract_deadlock : ( Msg01 + Msg12 ) => ( Msg30 + Msg23 ) ;
+
+    // Invariant consensus contract:
+    // When projective 1st Betti number vanishes, all communication
+    // dependency vortices have contracted identically.
+    until betti( complex , dim = 1) == 0 {
+        apply contract_deadlock on complex ;
+
+        // Evaluate Hodge 1-Laplacian kernel ker(L_1) over Q
+        compute_hodge_spectrum( complex , dim = 1 , field = ExactRational ) ;
+    }
+}

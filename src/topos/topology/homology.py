@@ -114,6 +114,79 @@ class ExactMatrix:
 
         return (ExactMatrix(self.rows, self.cols, mat), rank)
 
+    def reduced_row_echelon_form(self) -> Tuple[ExactMatrix, int, List[int]]:
+        """Performs exact Gauss-Jordan elimination to compute Reduced Row Echelon Form (RREF).
+        
+        Returns:
+            (rref_matrix, rank, pivot_cols): RREF matrix, its rank, and indices of pivot columns.
+        """
+        if self.rows == 0 or self.cols == 0:
+            return (ExactMatrix(self.rows, self.cols), 0, [])
+
+        mat = [[self._data[r][c] for c in range(self.cols)] for r in range(self.rows)]
+        r = 0
+        lead = 0
+        pivot_cols: List[int] = []
+
+        while r < self.rows and lead < self.cols:
+            pivot_row = r
+            while pivot_row < self.rows and mat[pivot_row][lead] == 0:
+                pivot_row += 1
+
+            if pivot_row == self.rows:
+                lead += 1
+                continue
+
+            mat[r], mat[pivot_row] = mat[pivot_row], mat[r]
+            pivot_val = mat[r][lead]
+            mat[r] = [val / pivot_val for val in mat[r]]
+
+            for other_row in range(self.rows):
+                if other_row != r:
+                    factor = mat[other_row][lead]
+                    if factor != 0:
+                        mat[other_row] = [
+                            mat[other_row][c] - factor * mat[r][c]
+                            for c in range(self.cols)
+                        ]
+
+            pivot_cols.append(lead)
+            r += 1
+            lead += 1
+
+        return (ExactMatrix(self.rows, self.cols, mat), len(pivot_cols), pivot_cols)
+
+    def nullspace_basis(self) -> List[List[Fraction]]:
+        """Computes exact rational basis vectors spanning ker(M).
+        
+        Returns:
+            List of basis vectors, each of length self.cols, such that M @ v = 0.
+        """
+        if self.cols == 0:
+            return []
+        if self.rows == 0:
+            # Entire space Q^cols is kernel
+            basis: List[List[Fraction]] = []
+            for c in range(self.cols):
+                vec = [Fraction(0, 1)] * self.cols
+                vec[c] = Fraction(1, 1)
+                basis.append(vec)
+            return basis
+
+        rref_mat, rank, pivot_cols = self.reduced_row_echelon_form()
+        pivot_set = set(pivot_cols)
+        free_cols = [c for c in range(self.cols) if c not in pivot_set]
+
+        basis: List[List[Fraction]] = []
+        for free_col in free_cols:
+            vec = [Fraction(0, 1)] * self.cols
+            vec[free_col] = Fraction(1, 1)
+            for row_idx, p_col in enumerate(pivot_cols):
+                vec[p_col] = -rref_mat.get(row_idx, free_col)
+            basis.append(vec)
+
+        return basis
+
     def rank(self) -> int:
         """Computes the exact rank of the matrix over Q."""
         _, r = self.row_echelon_form()

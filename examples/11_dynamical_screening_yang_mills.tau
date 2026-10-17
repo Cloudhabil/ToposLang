@@ -1,0 +1,34 @@
+// Module: 11_dynamical_screening_yang_mills.tau
+// 4D SU(2) Dynamically Screened Cellular Hodge-Dirac Operator (Case B)
+
+target YangMills_CaseB {
+    gauge_group : SU(2) ;
+    center_group : Z_N(2) ;
+    spacetime_dim : 4 ;
+}
+
+complex CellComplex4D {
+    dimension : 4 ;
+
+    // Declarations of graded topological cell sets
+    cells 0 : V0 , V1 , V2 , V3 , V4 ;
+    cells 1 : L01 : V0 -> V1 , L12 : V1 -> V2 , L23 : V3 -> V2 , L30 : V0 -> V3 ;
+    cells 2 : P0123 : { L01 : +1 , L12 : +1 , L23 : -1 , L30 : -1 } ;
+    cells 3 : VOL_01234 ;
+    cells 4 : HYPER_012345 ;
+
+    sheaf GaugeSheaf {
+        stalk_algebra : SU(2) ;
+        center_charge : 1 ;
+    }
+}
+
+process execute_dynamical_screening( complex : CellComplex4D ) {
+    // Assert 4-tier boundary nilpotency statically
+    assert nilpotency(dim = 1) == true ; // B1 * B2 == 0
+    assert nilpotency(dim = 2) == true ; // B2 * B3 == 0
+    assert nilpotency(dim = 3) == true ; // B3 * B4 == 0
+
+    // Evaluate the non-perturbative dynamically screened Hodge-Dirac operator
+    compute_screening_gap( complex , gauge_group = SU(2) , coupling = 0.8 ) ;
+}
