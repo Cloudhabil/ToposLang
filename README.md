@@ -17,7 +17,8 @@
 Created by **Elias Oulad Brahim** ([Cloudhabil](https://github.com/Cloudhabil)), ToposLang addresses the foundational bottlenecks of modern computing identified in the monograph and research papers:
 1. **The Concurrency Wall:** Resolves lock contention by treating computation as rewrite operations over oriented, graded Directed Acyclic Cell Complexes (DACC) with automatic **Dual-Tier Spatial Wavefront Scheduling** (Theorem 2.2, zero mutexes).
 2. **The Heuristic Termination Flaw:** Replaces arbitrary floating-point convergence thresholds ($\|x_{k+1} - x_k\| < \epsilon$) with **provable homological invariants** (e.g., executing cellular loops until deadlock cycles vanish: `until betti(K, dim=1) == 0`).
-3. **Coordinate Fragmentation:** Eliminates Euler angle singularities, quaternions, and matrix conversions by embedding continuous spatial geometry in standardized **$3\text{D}$ Projective Geometric Algebra ($\operatorname{Spin}(3,0,1) \cong SE(3)$)**.
+3. **Coordinate Fragmentation:** Eliminates Euler angle singularities, quaternions, and matrix conversions by embedding continuous spatial geometry in standardized **$3\text{D}$ Projective Geometric Algebra ($\mathrm{Spin}(3,0,1) \cong \mathrm{SE}(3)$)**.
+
 4. **Non-Archimedean Metric Resolution:** Replaces floating-point SVD degradation with exact **Multi-Prime Chinese Remainder Theorem (CRT)** reduction, while restoring continuous distance comparisons through **Homogeneous Rational Quadratic Forms** and **Garner's Mixed-Radix Re-Lifting**.
 
 ToposLang operates with **100% pure Python and zero external runtime dependencies** (no NumPy, SciPy, or C extensions required).
@@ -53,11 +54,11 @@ ToposLang natively implements the full architecture formalized in [SSRN-7618742]
 * **Dual-Stream Clifford Attention:** Evaluates metric alignment $\langle Q \widetilde{K} \rangle_0$ against exterior wedge incidence distance $\|Q \wedge K\|_{Cl}^2$.
 * **4-Channel Combinatorial Hodge-Dirac Routing:** Aggregates information orthogonally across lower divergence ($N_\downarrow$), upper curl ($N_\uparrow$), boundary faces ($\partial$), and co-faces ($\delta$).
 * **Homology-Preserving Topological Pooling:** Reduces mesh complexity via strict free-pair elementary collapses ($\deg_\delta(e_i^{k-1}) = 1$) with certified chain deformation retractions $(\pi_\bullet, \iota_\bullet, h_\bullet)$, preserving Betti numbers and Euler characteristic.
-* **Differentiable Backprop across Topology:** Uses functorial adjoint pullbacks and heat-kernel spectral surrogates ($\widetilde{\beta}_k(z; \tau_{\text{heat}}) = \operatorname{Tr}(\exp(-\tau_{\text{heat}} L_k(z)))$).
+* **Differentiable Backprop across Topology:** Uses functorial adjoint pullbacks and heat-kernel spectral surrogates ($\widetilde{\beta}_k(z; \tau_{\text{heat}}) = \mathrm{Tr}(\exp(-\tau_{\text{heat}} L_k(z)))$).
 
 ### 3. Multi-Prime CRT & Non-Archimedean Dual-Lifting
 * **Zero Fraction Expansion:** $M$-lane 64-bit residue arithmetic ($p_m \equiv 3 \pmod 4$) in $(2^{62}, 2^{63})$ eliminates arbitrary-precision integer bit-growth during higher-order matrix reductions.
-* **Exact Rank Recovery:** $\operatorname{rank}_\mathbb{Q}(B_k) = \max_m \operatorname{rank}_{\mathbb{F}_{p_m}}(B_k \bmod p_m)$.
+* **Exact Rank Recovery:** $\mathrm{rank}_\mathbb{Q}(B_k) = \max_m \mathrm{rank}_{\mathbb{F}_{p_m}}(B_k \bmod p_m)$.
 * **Square-Root-Free Distance Queries:** Compares physical distances $d(P_1, P_2) < a/b$ via exact rational quadratic forms:
   $$b^2 \left[ (X_1 W_2 - X_2 W_1)^2 + (Y_1 W_2 - Y_2 W_1)^2 + (Z_1 W_2 - Z_2 W_1)^2 \right] < a^2 (W_1 W_2)^2$$
 * **Garner Mixed-Radix Re-Lifting:** Solves boolean sign and ordering queries ($A > B$) at control loop interfaces in $\mathcal{O}(M^2)$ operations with zero floating-point error.
@@ -65,8 +66,9 @@ ToposLang natively implements the full architecture formalized in [SSRN-7618742]
 
 ### 4. Zero-Lock Dual-Tier Wavefront Scheduling
 Executes concurrent spatial rewrites across parallel execution cores using the **Dual-Tier Interference Predicate**:
-$$\operatorname{Interference}(r_1, r_2) = (\operatorname{supp}(r_1) \cap \operatorname{supp}(r_2) \neq \emptyset) \wedge (S(r_1) \wedge S(r_2) \neq 0)$$
+$$\mathrm{Interference}(r_1, r_2) = (\mathrm{supp}(r_1) \cap \mathrm{supp}(r_2) \neq \emptyset) \wedge (S(r_1) \wedge S(r_2) \neq 0)$$
 If `False`, rules commute identically ($r_1 \circ r_2 \equiv r_2 \circ r_1$) and execute in parallel with **zero mutex locks and zero cache-line invalidations**.
+
 
 ### 5. Constructive Quantum Field Theory & Gauge Physics
 * **Dynamically Screened Hodge-Dirac Operator:** Case B discrete operator $\mathcal{D}_{\text{DACC}}[U]$ with exact oriented discrete Bianchi closure.
@@ -80,7 +82,8 @@ If `False`, rules commute identically ($r_1 \circ r_2 \equiv r_2 \circ r_1$) and
 
 | Domain | Problem in Standard Stacks | ToposLang Solution |
 | :--- | :--- | :--- |
-| **Robotics & Kinematics** | Gimbal lock; quaternion-matrix conversions; float drift | Standardized $\operatorname{Spin}(3,0,1)$ motors ($M = TR$, $M\widetilde{M} = 1$); coordinate-free sandwiches |
+| **Robotics & Kinematics** | Gimbal lock; quaternion-matrix conversions; float drift | Standardized $\mathrm{Spin}(3,0,1)$ motors ($M = TR$, $M\widetilde{M} = 1$); coordinate-free sandwiches |
+
 | **Safety & Collision Detection** | Rounding errors classify boundary obstacles incorrectly | Exact rational quadratic distance forms; zero square roots; Garner sign lifting |
 | **Topological Deep Learning** | Mesh downsampling destroys cycles/holes; ad-hoc GNNs | HCST dual-stream attention; homology-preserving free-pair pooling; heat-kernel surrogates |
 | **Multi-Agent Coordination** | Mutex lock contention; deadlocks undetected | Theorem 2.2 dual-tier lock-free wavefronts; termination loops governed by `betti(K, 1) == 0` |
@@ -152,7 +155,8 @@ process synchronize_mesh(complex: CellComplex) {
 
 ### 3. Python API Usage
 
-#### Rigid-Body $\operatorname{Spin}(3,0,1)$ Motors (PGA)
+#### Rigid-Body Spin(3,0,1) Motors (PGA)
+
 ```python
 import math
 from topos.core.clifford import PGA301Motor, Multivector, PGA301
@@ -255,10 +259,11 @@ topos-lang/
 
 ToposLang is grounded in the mathematical formalisms introduced in:
 
-1. **Elias Oulad Brahim (2026).** *Hodge-Clifford Spatial Transformers: A Unified Topological and Geometric Native Architecture for Higher-Dimensional Programming and Silicon Coprocessors.* SSRN Working Paper [7618742](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=7618742).
-2. **Elias Oulad Brahim (2026).** *Topological and Geometric Native Coding for Higher Dimensional Programming: A Monograph on Cellular Homotopy Compilation, Clifford Runtimes, and Invariant-Driven Concurrency.* Independent Monograph.
-3. **Elias Oulad Brahim (2026).** *Mathematical Formalism, Proofs, and Compiler Bounds for CRT Finite-Ring Galois-Clifford Sheaves.*
-4. **Elias Oulad Brahim (2026).** *Resolving Non-Archimedean Metric Limits in CRT Finite-Ring Geometric Computing.*
+1. **Oulad Brahim, Elias**, *Topological and Geometric Native Coding for Higher Dimensional Programming* (September 28, 2026). Available at SSRN: [https://ssrn.com/abstract=7536578](https://ssrn.com/abstract=7536578) or [http://dx.doi.org/10.2139/ssrn.7536578](http://dx.doi.org/10.2139/ssrn.7536578).
+2. **Oulad Brahim, Elias**, *ToposLang: An Invariant-driven Topological Programming Language and Lock-free Spatial Concurrency Runtime Over Higher-dimensional Cell Complexes* (September 21, 2026). Available at SSRN: [https://ssrn.com/abstract=7498298](https://ssrn.com/abstract=7498298) or [http://dx.doi.org/10.2139/ssrn.7498298](http://dx.doi.org/10.2139/ssrn.7498298).
+3. **Oulad Brahim, Elias**, *Bounded Kan Composition, Clifford Stalk Closures, and Invariant-Driven Cell Rewriting in Topological and Geometric Native Coding for Higher Dimensional Programming Languages* (October 01, 2026). Available at SSRN: [https://ssrn.com/abstract=7548324](https://ssrn.com/abstract=7548324) or [http://dx.doi.org/10.2139/ssrn.7548324](http://dx.doi.org/10.2139/ssrn.7548324).
+4. **Oulad Brahim, Elias**, *Hodge-Clifford Spatial Transformers: A Unified Topological and Geometric Native Architecture for Higher-dimensional Programming and Silicon Coprocessors* (October 16, 2026). Available at SSRN: [https://ssrn.com/abstract=7618742](https://ssrn.com/abstract=7618742) or [http://dx.doi.org/10.2139/ssrn.7618742](http://dx.doi.org/10.2139/ssrn.7618742).
+
 
 ---
 
